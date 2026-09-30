@@ -98,7 +98,12 @@ return [
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
             // Fail fast (default is 30s) so a slow/unreachable DB gives a clear error, not a hung request.
-            'options' => extension_loaded('pdo_pgsql') ? [PDO::ATTR_TIMEOUT => (int) env('DB_CONNECT_TIMEOUT', 10)] : [],
+            // DB_PERSISTENT (on in the Vercel container) reuses the connection across requests handled by
+            // the same PHP worker, so the TLS handshake to the database is not paid on every request.
+            'options' => extension_loaded('pdo_pgsql') ? [
+                PDO::ATTR_TIMEOUT => (int) env('DB_CONNECT_TIMEOUT', 5),
+                PDO::ATTR_PERSISTENT => (bool) env('DB_PERSISTENT', false),
+            ] : [],
         ],
 
         'sqlsrv' => [
