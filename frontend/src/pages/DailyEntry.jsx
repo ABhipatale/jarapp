@@ -196,7 +196,7 @@ export default function DailyEntry() {
 
       {error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
-      <div className="no-print sticky bottom-20 z-20">
+      <div className="no-print sticky-above-nav sticky z-20">
         <button className={`${type === 'given' ? 'btn-primary' : 'btn bg-sky-600 text-white'} w-full py-4 text-lg shadow-lg`} disabled={busy}>
           {busy ? 'Saving…' : `Save – ${type === 'given' ? `Give ${q} Jar${q === 1 ? '' : 's'}` : `Return ${q} Jar${q === 1 ? '' : 's'}`}`}
         </button>

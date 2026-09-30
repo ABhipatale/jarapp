@@ -122,7 +122,7 @@ export default function Settings() {
           ))}
         </section>
 
-        <div className="sticky bottom-20 z-20">
+        <div className="sticky-above-nav sticky z-20">
           <button className="btn-primary w-full py-4 shadow-lg" disabled={busy}>
             {busy ? 'Saving…' : 'Save Settings'}
           </button>

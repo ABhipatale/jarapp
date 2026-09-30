@@ -155,7 +155,7 @@ export default function PaymentForm() {
 
       {error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
-      <div className="sticky bottom-20 z-20">
+      <div className="sticky-above-nav sticky z-20">
         <button className="btn w-full bg-emerald-600 py-4 text-lg text-white shadow-lg" disabled={busy}>
           {busy ? 'Saving…' : `Save Payment ${paid > 0 ? money(paid) : ''}`}
         </button>

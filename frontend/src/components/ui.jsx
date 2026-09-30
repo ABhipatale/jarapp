@@ -173,12 +173,17 @@ export function ErrorBox({ message, onRetry }) {
 /** Sticky round "+" button above the bottom nav. */
 export function Fab({ to, label }) {
   return (
-    <Link
-      to={to}
-      className="no-print fixed bottom-24 right-4 z-30 flex h-14 items-center gap-2 rounded-full bg-brand-700 px-5 text-base font-semibold text-white shadow-lg shadow-brand-800/30 active:scale-95"
-    >
-      <span className="text-2xl leading-none">+</span> {label}
-    </Link>
+    // Kept inside the app column and lifted clear of the bottom menu (incl. phone safe area).
+    <div className="fab-above-nav no-print pointer-events-none fixed inset-x-0 z-30">
+      <div className="mx-auto flex max-w-2xl justify-end px-4">
+        <Link
+          to={to}
+          className="pointer-events-auto flex h-12 items-center gap-2 rounded-full bg-brand-700 pl-4 pr-5 text-[15px] font-semibold text-white shadow-lg shadow-brand-800/30 ring-4 ring-slate-100 active:scale-95"
+        >
+          <span className="text-xl leading-none">+</span> {label}
+        </Link>
+      </div>
+    </div>
   );
 }
 

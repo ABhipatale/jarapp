@@ -38,6 +38,12 @@ input, select, textarea, button { font: inherit; }
 }
 
 .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+
+/* Bottom menu = 64px + phone safe area; the floating + sticks out ~20px above it. */
+:root { --nav-h: calc(4rem + env(safe-area-inset-bottom)); }
+.main-above-nav { padding-bottom: calc(var(--nav-h) + 6rem); }
+.fab-above-nav { bottom: calc(var(--nav-h) + 1.75rem); }
+.sticky-above-nav { bottom: calc(var(--nav-h) + 1.75rem); }
 .pt-safe { padding-top: env(safe-area-inset-top); }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }

@@ -115,7 +115,7 @@ export default function Layout() {
         </div>
       )}
 
-      <main className="px-4 pb-28 pt-4">
+      <main className="main-above-nav px-4 pt-4">
         <Outlet />
         <DevCredit className="mt-8" />
       </main>
@@ -138,7 +138,7 @@ export default function Layout() {
                   {n.main ? (
                     // Floating + button: absolutely placed so its label lines up with the other tabs.
                     <span
-                      className={`absolute -top-5 left-1/2 grid h-14 w-14 -translate-x-1/2 place-items-center rounded-full text-3xl font-light leading-none text-white shadow-lg shadow-brand-800/30 ring-4 ring-white ${
+                      className={`absolute -top-3 left-1/2 grid h-11 w-11 -translate-x-1/2 place-items-center rounded-full text-2xl font-light leading-none text-white shadow-md shadow-brand-800/30 ring-[3px] ring-white ${
                         isActive ? 'bg-brand-800' : 'bg-brand-700'
                       }`}
                     >
