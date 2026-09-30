@@ -38,7 +38,11 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = tokenStore.get();
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+    // Vercel's proxy drops Authorization before it reaches the Laravel container; the API also reads this.
+    config.headers['X-Auth-Token'] = token;
+  }
   return config;
 });
 
