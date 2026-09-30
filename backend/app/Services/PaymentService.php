@@ -1,0 +1,75 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Customer;
+use App\Models\Payment;
+use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+
+class PaymentService
+{
+    public function __construct(
+        private BalanceService $balances,
+        private LedgerService $ledger,
+    ) {}
+
+    /** @return array{0: Payment, 1: bool} */
+    public function create(array $data, ?int $userId): array
+    {
+        if (! empty($data['client_uuid']) && $existing = Payment::where('client_uuid', $data['client_uuid'])->first()) {
+            return [$existing, false];
+        }
+
+        try {
+            return DB::transaction(function () use ($data, $userId) {
+                Customer::whereKey($data['customer_id'])->lockForUpdate()->firstOrFail();
+
+                $pending = $this->balances->forCustomer($data['customer_id'])['pending'];
+                $amount = round((float) $data['amount'], 2);
+                $isAdvance = (bool) ($data['is_advance'] ?? false);
+
+                if ($amount > max($pending, 0) && ! $isAdvance) {
+                    $shown = number_format(max($pending, 0), 2);
+                    throw ValidationException::withMessages([
+                        'amount' => "Payment is more than pending amount (₹{$shown}). Tick 'Advance payment' to accept extra money.",
+                    ]);
+                }
+
+                $payment = Payment::create([
+                    'customer_id' => $data['customer_id'],
+                    'payment_date' => $data['payment_date'],
+                    'amount' => $amount,
+                    'payment_mode' => $data['payment_mode'],
+                    'previous_pending' => $pending,
+                    'remaining_pending' => round($pending - $amount, 2),
+                    'is_advance' => $isAdvance,
+                    'notes' => $data['notes'] ?? null,
+                    'client_uuid' => $data['client_uuid'] ?? null,
+                    'created_by' => $userId,
+                ]);
+
+                $this->ledger->rebuild($payment->customer_id);
+
+                return [$payment, true];
+            });
+        } catch (UniqueConstraintViolationException $e) {
+            $existing = Payment::where('client_uuid', $data['client_uuid'] ?? null)->first();
+            if (! $existing) {
+                throw $e;
+            }
+
+            return [$existing, false];
+        }
+    }
+
+    public function delete(Payment $payment): void
+    {
+        DB::transaction(function () use ($payment) {
+            Customer::withTrashed()->whereKey($payment->customer_id)->lockForUpdate()->first();
+            $payment->delete();
+            $this->ledger->rebuild($payment->customer_id);
+        });
+    }
+}

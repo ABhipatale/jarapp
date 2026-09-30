@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-500: #2563eb;
+  --color-brand-600: #1d4ed8;
+  --color-brand-700: #1e40af;
+  --color-brand-800: #1e3a8a;
+  --font-sans: "Inter", "Noto Sans Devanagari", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+html, body { background: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+body { color: #0f172a; overscroll-behavior-y: none; }
+input, select, textarea, button { font: inherit; }
+
+/* v4: a custom utility so the button variants below can @apply it. */
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-base font-semibold transition active:scale-[.98] disabled:opacity-50 disabled:active:scale-100;
+}
+
+@layer components {
+  .card { @apply rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70; }
+  .label { @apply mb-1 block text-sm font-medium text-slate-600; }
+  .input { @apply w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-base outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100 disabled:bg-slate-100 disabled:text-slate-500; }
+  .btn-primary { @apply btn bg-brand-700 text-white shadow-sm hover:bg-brand-800; }
+  .btn-light { @apply btn bg-white text-slate-800 ring-1 ring-slate-300 hover:bg-slate-50; }
+  .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700; }
+  .btn-wa { @apply btn bg-[#25D366] text-white hover:bg-[#1ebe5b]; }
+  .btn-sm { @apply px-3 py-2 text-sm rounded-lg; }
+  .chip { @apply shrink-0 rounded-full px-3.5 py-2 text-sm font-medium ring-1 ring-slate-300 bg-white text-slate-700 transition; }
+  .chip-active { @apply bg-brand-700 text-white ring-brand-700; }
+  .table-wrap { @apply -mx-4 overflow-x-auto px-4; }
+  .tbl { @apply w-full min-w-max text-sm; }
+  .tbl th { @apply whitespace-nowrap border-b border-slate-200 bg-slate-50 px-2.5 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500; }
+  .tbl td { @apply whitespace-nowrap border-b border-slate-100 px-2.5 py-2.5; }
+  .tbl .num { @apply text-right tabular-nums; }
+}
+
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.pt-safe { padding-top: env(safe-area-inset-top); }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+.print-only { display: none; }
+
+@media print {
+  @page { margin: 12mm; }
+  html, body { background: #fff !important; }
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  .card { box-shadow: none !important; border: 1px solid #e2e8f0; break-inside: avoid; }
+  .table-wrap { overflow: visible !important; margin: 0 !important; padding: 0 !important; }
+  .tbl { min-width: 0 !important; font-size: 11px; }
+  main { padding-bottom: 0 !important; }
+}
