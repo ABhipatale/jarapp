@@ -1,0 +1,35 @@
+# Laravel API as a Vercel container service (FrankenPHP = PHP + web server in one binary).
+# Built by Vercel from vercel.json -> services.backend.
+
+# --- 1. PHP dependencies -------------------------------------------------------
+FROM composer:2 AS vendor
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-interaction --no-progress --no-scripts --prefer-dist
+COPY . .
+# Runs package:discover, which writes bootstrap/cache/{packages,services}.php.
+RUN composer dump-autoload --no-dev --optimize --classmap-authoritative
+
+# --- 2. Runtime -----------------------------------------------------------------
+FROM dunglas/frankenphp:1-php8.4-alpine
+RUN install-php-extensions pdo_pgsql opcache
+
+WORKDIR /app
+COPY --from=vendor /app /app
+COPY Caddyfile.vercel /etc/caddy/Caddyfile
+
+# Routes never depend on env vars, so they can be cached at build time.
+# (Config is NOT cached here: env vars only exist at runtime.)
+RUN php artisan route:cache
+
+# The container filesystem is not persistent, so Laravel's writable storage lives in /tmp,
+# logs go to stderr (Vercel runtime logs), and nothing relies on local files or sessions.
+ENV PORT=80 \
+    APP_ENV=production \
+    LARAVEL_STORAGE_PATH=/tmp/storage \
+    LOG_CHANNEL=stderr \
+    SESSION_DRIVER=array \
+    CACHE_STORE=database \
+    QUEUE_CONNECTION=sync
+
+CMD ["sh", "/app/vercel-start.sh"]

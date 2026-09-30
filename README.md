@@ -67,21 +67,37 @@ Default login is `admin@saiwater.in` / `ChangeMe@123` (or whatever `ADMIN_EMAIL`
 
 Tests (these use in-memory SQLite, so no database setup is needed): `cd backend && php artisan test`
 
-## Deploy
+## Deploy (one Vercel project, two services)
 
-**PostgreSQL**: any hosted Postgres works (Neon, Supabase, Render, Railway, etc.). Copy its connection details into the backend `.env`, either as `DB_*` or as a single `DB_URL`. Keep `DB_SSLMODE=require`.
+The root `vercel.json` deploys both parts as a single Vercel project on one domain:
 
-**Laravel API**: any PHP 8.2 host with the `pdo_pgsql` extension (Laravel Forge, a VPS, Railway, Render, etc.):
-```bash
-composer install --no-dev --optimize-autoloader
-php artisan key:generate        # first time only
-php artisan migrate --force
-php artisan db:seed --force     # first time only – creates the admin
-php artisan config:cache && php artisan route:cache
-```
-Point the web root at `backend/public`. Set `FRONTEND_URL` to your Vercel URL (CORS only allows the origins listed there). Set `APP_DEBUG=false`.
+| Path | Service | What it is |
+|---|---|---|
+| `/api/*`, `/up` | `backend` | Laravel API, built from `backend/Dockerfile.vercel` (FrankenPHP container) |
+| everything else | `frontend` | the React PWA (static Vite build) |
 
-**React PWA on Vercel**: import the repo and set Root Directory to `frontend`. Framework: Vite. Environment variable: `VITE_API_URL=https://your-api-domain` (without `/api`). `vercel.json` sends every page URL to `index.html` so links and refreshes work, and it stops the service worker from being cached.
+The app calls `/api/...` on its own domain, so no CORS setup or `VITE_API_URL` is needed in production.
+
+1. **PostgreSQL**: create a database (for example Neon, Mumbai or Singapore region) and copy its connection string.
+2. **Vercel project**: import the GitHub repo and leave Root Directory at the **repository root**, where `vercel.json` lives. Services is a beta feature, so your Vercel team may need it enabled.
+3. **Environment variables** (Project → Settings → Environment Variables):
+   ```
+   APP_KEY=base64:...        # php artisan key:generate --show
+   APP_DEBUG=false
+   APP_TIMEZONE=Asia/Kolkata
+   DB_CONNECTION=pgsql
+   DB_URL=postgresql://...?sslmode=require
+   DB_SSLMODE=require
+   ADMIN_EMAIL=admin@saiwater.in
+   ADMIN_MOBILE=9404349071
+   ADMIN_PASSWORD=<strong password>
+   ```
+4. **Deploy.** When a backend instance starts, `backend/vercel-start.sh` runs `migrate` and the seeder. Both are safe to repeat, and the seeder only creates the admin account and default settings if they are missing. To run migrations yourself instead, set `RUN_MIGRATIONS=false`.
+5. **Check** that `https://<your-app>.vercel.app/up` shows "Application up", then log in.
+
+The backend's filesystem on Vercel is temporary. Logs go to Vercel's runtime logs, the cache and login throttling use the database, and all business data is in PostgreSQL.
+
+Local development without Vercel works as before: run `php artisan serve` for the API and `npm run dev` for the app, with `VITE_API_URL` set in `frontend/.env`. Running `vercel dev` also works, but it needs Docker to build the backend container.
 
 **Install on a phone**: open the Vercel URL. On Android (Chrome), tap ⋮ → *Install app*. On iPhone (Safari), tap Share → *Add to Home Screen*.
 

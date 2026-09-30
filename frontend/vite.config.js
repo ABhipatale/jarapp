@@ -29,6 +29,8 @@ export default defineConfig({
       },
       workbox: {
         navigateFallback: '/index.html',
+        // /api and /up belong to the Laravel service; never answer them with the app shell.
+        navigateFallbackDenylist: [/^\/api\//, /^\/up$/],
         globPatterns: ['**/*.{js,css,html,png,jpg,svg,woff2}'],
         runtimeCaching: [
           {

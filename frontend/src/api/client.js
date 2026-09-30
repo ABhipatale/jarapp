@@ -29,7 +29,9 @@ export const tokenStore = {
 };
 
 const api = axios.create({
-  baseURL: (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/api',
+  // On Vercel the API is served from the same domain under /api (see root vercel.json), so
+  // VITE_API_URL stays unset. Set it only when the API runs elsewhere, e.g. local `php artisan serve`.
+  baseURL: (import.meta.env.VITE_API_URL || '') + '/api',
   headers: { Accept: 'application/json' },
   timeout: 20000,
 });
