@@ -97,6 +97,8 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Fail fast (default is 30s) so a slow/unreachable DB gives a clear error, not a hung request.
+            'options' => extension_loaded('pdo_pgsql') ? [PDO::ATTR_TIMEOUT => (int) env('DB_CONNECT_TIMEOUT', 10)] : [],
         ],
 
         'sqlsrv' => [
