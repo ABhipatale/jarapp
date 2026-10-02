@@ -114,7 +114,7 @@ class ReportController extends Controller
         $request->validate($extra + [
             'customer_id' => ['nullable', 'integer'],
             'search' => ['nullable', 'string', 'max:100'],
-        ], ['to.after_or_equal' => 'End date must be after start date.']);
+        ], ['to.after_or_equal' => __('शेवटचा दिनांक सुरुवातीच्या दिनांकानंतरचा असावा.')]);
     }
 
     private function customerId(Request $request): ?int

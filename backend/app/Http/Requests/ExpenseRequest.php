@@ -19,11 +19,11 @@ class ExpenseRequest extends ApiRequest
     public function messages(): array
     {
         return [
-            'expense_type.required' => 'Please enter expense type.',
-            'amount.required' => 'Please enter amount.',
-            'amount.gt' => 'Amount must be more than zero.',
-            'payment_mode.in' => 'Invalid payment mode.',
-            'expense_date.before_or_equal' => 'Date cannot be in the future.',
+            'expense_type.required' => __('कृपया खर्चाचा प्रकार टाका.'),
+            'amount.required' => __('कृपया रक्कम टाका.'),
+            'amount.gt' => __('रक्कम शून्यापेक्षा जास्त असावी.'),
+            'payment_mode.in' => __('चुकीची पेमेंट पद्धत.'),
+            'expense_date.before_or_equal' => __('दिनांक भविष्यातील असू शकत नाही.'),
         ];
     }
 }

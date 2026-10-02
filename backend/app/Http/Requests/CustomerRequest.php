@@ -25,11 +25,11 @@ class CustomerRequest extends ApiRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'Please enter customer name.',
-            'name.max' => 'Customer name is too long.',
-            'mobile.required' => 'Please enter mobile number.',
-            'mobile.regex' => 'Please enter a valid 10-digit mobile number.',
-            'status.in' => 'Invalid customer status.',
+            'name.required' => __('कृपया ग्राहकाचे नाव टाका.'),
+            'name.max' => __('ग्राहकाचे नाव खूप मोठे आहे.'),
+            'mobile.required' => __('कृपया मोबाईल नंबर टाका.'),
+            'mobile.regex' => __('कृपया योग्य 10 अंकी मोबाईल नंबर टाका.'),
+            'status.in' => __('चुकीची ग्राहक स्थिती.'),
         ];
     }
 }

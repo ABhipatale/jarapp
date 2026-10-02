@@ -35,7 +35,7 @@ class JarBusinessTest extends TestCase
     {
         $this->app['auth']->forgetGuards();
         $this->withHeader('Authorization', 'Bearer nope')->getJson('/api/dashboard')
-            ->assertStatus(401)->assertJson(['message' => 'Please login again.']);
+            ->assertStatus(401)->assertJson(['message' => 'कृपया पुन्हा लॉगिन करा.']);
     }
 
     public function test_login_with_email_or_mobile(): void
@@ -55,7 +55,7 @@ class JarBusinessTest extends TestCase
             ->assertJsonPath('data.amount', 150)
             ->assertJsonPath('data.udhari_amount', 50)
             ->assertJsonPath('data.current_jars', 5)
-            ->assertJsonPath('message', 'Jar entry saved successfully.');
+            ->assertJsonPath('message', 'जार नोंद यशस्वीरित्या जतन झाली.');
 
         $this->entry(['transaction_type' => 'returned', 'jar_quantity' => 2])
             ->assertCreated()->assertJsonPath('data.current_jars', 3);
@@ -86,7 +86,7 @@ class JarBusinessTest extends TestCase
     {
         $this->entry(['transaction_type' => 'given', 'jar_quantity' => 3, 'rate' => 30]);
         $this->entry(['transaction_type' => 'returned', 'jar_quantity' => 4])
-            ->assertStatus(422)->assertJsonPath('message', 'Customer has only 3 jars. Cannot return 4.');
+            ->assertStatus(422)->assertJsonPath('message', 'ग्राहकाकडे फक्त 3 जार आहेत. 4 जार परत घेता येणार नाहीत.');
     }
 
     public function test_cannot_give_more_jars_than_available_in_shop(): void
@@ -95,11 +95,11 @@ class JarBusinessTest extends TestCase
         $this->entry(['transaction_type' => 'given', 'jar_quantity' => 45, 'rate' => 30])->assertCreated();
 
         $this->entry(['transaction_type' => 'given', 'jar_quantity' => 6, 'rate' => 30])
-            ->assertStatus(422)->assertJsonPath('message', 'Only 5 jars available in the shop. Cannot give 6.');
+            ->assertStatus(422)->assertJsonPath('message', 'दुकानात फक्त 5 जार उपलब्ध आहेत. 6 जार देता येणार नाहीत.');
         $this->entry(['transaction_type' => 'given', 'jar_quantity' => 5, 'rate' => 30])->assertCreated();
 
         $this->entry(['transaction_type' => 'given', 'jar_quantity' => 1, 'rate' => 30])
-            ->assertStatus(422)->assertJsonPath('message', 'No jars available in the shop. All jars are with customers or damaged/lost.');
+            ->assertStatus(422)->assertJsonPath('message', 'दुकानात एकही जार उपलब्ध नाही. सर्व जार ग्राहकांकडे आहेत किंवा खराब/हरवलेले आहेत.');
 
         // A return frees a jar again.
         $this->entry(['transaction_type' => 'returned', 'jar_quantity' => 1])->assertCreated();
@@ -113,7 +113,7 @@ class JarBusinessTest extends TestCase
         $this->putJson('/api/settings', ['total_jars' => 0])->assertOk();
 
         $this->entry(['transaction_type' => 'given', 'jar_quantity' => 1, 'rate' => 30])
-            ->assertStatus(422)->assertJsonPath('message', 'No jars in stock yet. Add your jars first in the Jars screen.');
+            ->assertStatus(422)->assertJsonPath('message', "अजून स्टॉकमध्ये जार नाहीत. आधी 'जार' विभागात जार जोडा.");
     }
 
     public function test_cannot_delete_a_return_if_shop_has_no_jars_left_for_it(): void
@@ -128,12 +128,12 @@ class JarBusinessTest extends TestCase
     public function test_rejects_negative_and_invalid_values(): void
     {
         $this->entry(['transaction_type' => 'given', 'jar_quantity' => -2, 'rate' => 30])->assertStatus(422);
-        $this->entry(['transaction_type' => 'sold', 'jar_quantity' => 2])->assertStatus(422)->assertJsonPath('message', 'Invalid transaction type.');
+        $this->entry(['transaction_type' => 'sold', 'jar_quantity' => 2])->assertStatus(422)->assertJsonPath('message', 'चुकीचा व्यवहार प्रकार.');
         $this->entry(['transaction_type' => 'given', 'jar_quantity' => 2, 'rate' => 30, 'paid_amount' => 100])->assertStatus(422);
-        $this->postJson('/api/customers', ['name' => '', 'mobile' => '9876543210'])->assertStatus(422)->assertJsonPath('message', 'Please enter customer name.');
-        $this->postJson('/api/customers', ['name' => 'X', 'mobile' => '12345'])->assertStatus(422)->assertJsonPath('message', 'Please enter a valid 10-digit mobile number.');
+        $this->postJson('/api/customers', ['name' => '', 'mobile' => '9876543210'])->assertStatus(422)->assertJsonPath('message', 'कृपया ग्राहकाचे नाव टाका.');
+        $this->postJson('/api/customers', ['name' => 'X', 'mobile' => '12345'])->assertStatus(422)->assertJsonPath('message', 'कृपया योग्य 10 अंकी मोबाईल नंबर टाका.');
         $this->postJson('/api/payments', ['customer_id' => $this->rahul->id, 'payment_date' => now()->toDateString(), 'amount' => -5, 'payment_mode' => 'cash'])->assertStatus(422);
-        $this->postJson('/api/payments', ['customer_id' => $this->rahul->id, 'payment_date' => now()->toDateString(), 'amount' => 5, 'payment_mode' => 'cheque'])->assertStatus(422)->assertJsonPath('message', 'Invalid payment mode.');
+        $this->postJson('/api/payments', ['customer_id' => $this->rahul->id, 'payment_date' => now()->toDateString(), 'amount' => 5, 'payment_mode' => 'cheque'])->assertStatus(422)->assertJsonPath('message', 'चुकीची पेमेंट पद्धत.');
     }
 
     public function test_payment_over_pending_needs_advance_flag(): void
@@ -146,7 +146,7 @@ class JarBusinessTest extends TestCase
         $pay(['amount' => 100])->assertCreated()
             ->assertJsonPath('data.previous_pending', 300)
             ->assertJsonPath('data.remaining_pending', 200)
-            ->assertJsonPath('message', 'Payment received successfully.');
+            ->assertJsonPath('message', 'पेमेंट यशस्वीरित्या मिळाले.');
 
         $pay(['amount' => 250])->assertStatus(422);
         $pay(['amount' => 250, 'is_advance' => true])->assertCreated()->assertJsonPath('data.remaining_pending', -50);

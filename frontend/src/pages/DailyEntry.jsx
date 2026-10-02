@@ -5,6 +5,7 @@ import CustomerPicker from '../components/CustomerPicker';
 import { Field, PageHeader, Segmented, Stepper } from '../components/ui';
 import { useSettings } from '../context/SettingsContext';
 import { useUi } from '../context/UiContext';
+import { t } from '../i18n';
 import { money, num, round2, today, uuid } from '../lib/format';
 import { submit } from '../lib/outbox';
 import { messages, openWhatsApp } from '../lib/whatsapp';
@@ -17,12 +18,12 @@ export default function DailyEntry() {
 
   // Problems are shown in a small popup. Stock problems offer a shortcut to add jars.
   const showProblem = async (message) => {
-    const stock = /available in the shop|No jars in stock/i.test(message);
+    const stock = /उपलब्ध|स्टॉकमध्ये जार नाहीत|available in the shop|No jars in stock/i.test(message);
     const goAddJars = await alert({
-      title: stock ? 'Not enough jars' : 'Cannot save',
+      title: stock ? t('entry.notEnoughJars') : t('entry.cannotSave'),
       icon: stock ? '💧' : '⚠️',
       message,
-      actionText: stock ? 'Add Jars' : undefined,
+      actionText: stock ? t('entry.addJars') : undefined,
     });
     if (goAddJars) navigate('/jars');
   };
@@ -52,8 +53,8 @@ export default function DailyEntry() {
 
   // Quick-action links (?type=…) switch the type even when already on this screen.
   useEffect(() => {
-    const t = params.get('type');
-    if (t === 'given' || t === 'returned') setType(t);
+    const ty = params.get('type');
+    if (ty === 'given' || ty === 'returned') setType(ty);
     if (params.get('customer')) setCustomerId(params.get('customer'));
   }, [params]);
 
@@ -69,12 +70,12 @@ export default function DailyEntry() {
   const jarsAfter = type === 'given' ? jarsNow + q : jarsNow - q;
 
   const problem = useMemo(() => {
-    if (!customerId) return 'Please select a customer.';
-    if (q < 1) return 'Jar quantity must be at least 1.';
+    if (!customerId) return t('entry.selectCustomer');
+    if (q < 1) return t('entry.qtyMin');
     if (type === 'given' && available !== null && q > available)
-      return available <= 0 ? 'No jars available in the shop. All jars are with customers or damaged/lost.' : `Only ${available} jars available in the shop. Cannot give ${q}.`;
-    if (type === 'returned' && q > jarsNow) return jarsNow === 0 ? 'This customer has no jars to return.' : `Customer has only ${jarsNow} jars. Cannot return ${q}.`;
-    if (type === 'given' && num(paidInput) > amount && payType === 'udhari') return 'Paid amount cannot be more than the bill amount. Enter the extra as Advance.';
+      return available <= 0 ? t('entry.noneAvailable') : t('entry.onlyAvailable', { n: available, q });
+    if (type === 'returned' && q > jarsNow) return jarsNow === 0 ? t('entry.noJarsToReturn') : t('entry.onlyWithCustomer', { n: jarsNow, q });
+    if (type === 'given' && num(paidInput) > amount && payType === 'udhari') return t('entry.paidTooMuch');
     return '';
   }, [customerId, q, type, jarsNow, available, paidInput, amount, payType]);
 
@@ -92,12 +93,12 @@ export default function DailyEntry() {
       ...(type === 'given' && { rate: num(rate), payment_type: payType, paid_amount: paid, advance_amount: num(advance) }),
     };
     try {
-      const res = await submit('/jar-transactions', body, `${type === 'given' ? 'Give' : 'Return'} ${q} jars – ${customer?.name}`);
+      const res = await submit('/jar-transactions', body, t(type === 'given' ? 'entry.outboxGive' : 'entry.outboxReturn', { q, name: customer?.name }));
       if (res.queued) {
-        toast('No internet. Entry saved on phone and will sync automatically.', 'info');
+        toast(t('entry.queuedToast'), 'info');
         setResult({ queued: true, customer_name: customer?.name, transaction_type: type, jar_quantity: q });
       } else {
-        toast(res.data.message || 'Jar entry saved successfully.');
+        toast(res.data.message || t('entry.savedOk'));
         setResult({ ...res.data.data, customer_name: customer?.name, customer_mobile: customer?.mobile });
         setCustomer((c) => c && { ...c, current_jars: res.data.data.current_jars, pending_amount: res.data.data.pending_amount });
         loadStock();
@@ -127,22 +128,22 @@ export default function DailyEntry() {
 
   return (
     <form onSubmit={save} className="space-y-4">
-      <PageHeader title="Daily Jar Entry" subtitle="दैनिक जार नोंद" />
+      <PageHeader title={t('entry.title')} />
 
       <Segmented
         value={type}
         onChange={setType}
         options={[
-          { value: 'given', label: '＋ GIVE JAR', activeClass: 'bg-brand-700 text-white ring-brand-700' },
-          { value: 'returned', label: '↩ RETURN JAR', activeClass: 'bg-sky-600 text-white ring-sky-600' },
+          { value: 'given', label: t('entry.give'), activeClass: 'bg-brand-700 text-white ring-brand-700' },
+          { value: 'returned', label: t('entry.return'), activeClass: 'bg-sky-600 text-white ring-sky-600' },
         ]}
       />
 
       <div className="card space-y-4">
-        <Field label="Date">
+        <Field label={t('entry.date')}>
           <input type="date" className="input" value={date} max={today()} onChange={(e) => setDate(e.target.value)} />
         </Field>
-        <Field group label="Customer">
+        <Field group label={t('entry.customer')}>
           <CustomerPicker
             value={customerId}
             onChange={(id, c) => {
@@ -152,25 +153,25 @@ export default function DailyEntry() {
           />
         </Field>
         {customer && (
-          <Field label="Mobile Number">
+          <Field label={t('entry.mobile')}>
             <input className="input" value={customer.mobile} disabled />
           </Field>
         )}
-        <Field group label={type === 'given' ? 'Jars Given' : 'Jars Returned'}>
+        <Field group label={type === 'given' ? t('entry.howManyGiven') : t('entry.howManyReturned')}>
           <Stepper value={qty} onChange={(v) => setQty(String(v))} min={1} />
         </Field>
         {customer && (
           <p className={`rounded-xl px-3 py-2 text-sm ${jarsAfter < 0 ? 'bg-red-50 text-red-700' : 'bg-slate-50 text-slate-700'}`}>
-            Current jars: <b>{jarsNow}</b> → after this entry: <b>{jarsAfter}</b>
+            {t('entry.currentJars')} <b>{jarsNow}</b> → {t('entry.afterEntry')} <b>{jarsAfter}</b>
           </p>
         )}
         {type === 'given' && available !== null && (
           <p className={`rounded-xl px-3 py-2 text-sm ${q > available ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-800'}`}>
-            💧 Available in shop: <b>{available}</b> jars
+            {t('entry.availableInShop')} <b>{available}</b> {t('entry.jarsWord')}
             {q > available && (
               <>
                 {' '}
-                — <Link to="/jars" className="font-semibold underline">add jars</Link>
+                — <Link to="/jars" className="font-semibold underline">{t('entry.addJars')}</Link>
               </>
             )}
           </p>
@@ -180,28 +181,28 @@ export default function DailyEntry() {
       {type === 'given' && (
         <div className="card space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Rate per Jar (₹)">
+            <Field label={t('entry.rate')}>
               <input className="input" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value.replace(/[^\d.]/g, ''))} />
             </Field>
-            <Field group label="Amount">
+            <Field group label={t('entry.amount')}>
               <div className="input bg-slate-50 font-bold">{money(amount)}</div>
             </Field>
           </div>
 
-          <Field group label="Payment Type">
+          <Field group label={t('entry.payType')}>
             <Segmented
               size="sm"
               value={payType}
               onChange={setPayType}
               options={[
-                { value: 'cash', label: '💵 CASH', activeClass: 'bg-emerald-600 text-white ring-emerald-600' },
-                { value: 'udhari', label: '📒 UDHARI', activeClass: 'bg-amber-500 text-white ring-amber-500' },
+                { value: 'cash', label: t('entry.payCash'), activeClass: 'bg-emerald-600 text-white ring-emerald-600' },
+                { value: 'udhari', label: t('entry.payUdhari'), activeClass: 'bg-amber-500 text-white ring-amber-500' },
               ]}
             />
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Paid Amount (₹)" hint={payType === 'udhari' ? 'Part payment, if any' : 'Full amount paid'}>
+            <Field label={t('entry.paidAmount')} hint={payType === 'udhari' ? t('entry.partPaid') : t('entry.fullPaid')}>
               <input
                 className="input"
                 inputMode="decimal"
@@ -211,27 +212,27 @@ export default function DailyEntry() {
                 onChange={(e) => setPaidInput(e.target.value.replace(/[^\d.]/g, ''))}
               />
             </Field>
-            <Field group label="Udhari (auto)">
+            <Field group label={t('entry.udhariAuto')}>
               <div className={`input font-bold ${udhari > 0 ? 'bg-amber-50 text-amber-800' : 'bg-slate-50'}`}>{money(udhari)}</div>
             </Field>
           </div>
 
-          <Field label="Advance Money (₹)" hint="Extra money received — adjusts old udhari / future bills">
+          <Field label={t('entry.advanceMoney')} hint={t('entry.advanceHint')}>
             <input className="input" inputMode="decimal" value={advance} placeholder="0" onChange={(e) => setAdvance(e.target.value.replace(/[^\d.]/g, ''))} />
           </Field>
         </div>
       )}
 
       <div className="card">
-        <Field label="Notes">
-          <input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} placeholder="Optional" />
+        <Field label={t('entry.notes')}>
+          <input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} placeholder={t('entry.optional')} />
         </Field>
       </div>
 
 
       <div className="no-print sticky-above-nav sticky z-20">
         <button className={`${type === 'given' ? 'btn-primary' : 'btn bg-sky-600 text-white'} w-full py-4 text-lg shadow-lg`} disabled={busy}>
-          {busy ? 'Saving…' : `Save – ${type === 'given' ? `Give ${q} Jar${q === 1 ? '' : 's'}` : `Return ${q} Jar${q === 1 ? '' : 's'}`}`}
+          {busy ? t('entry.saving') : t(type === 'given' ? 'entry.saveGive' : 'entry.saveReturn', { q })}
         </button>
       </div>
     </form>
@@ -250,24 +251,24 @@ function SavedCard({ result, settings, onNew }) {
     <div className="space-y-4">
       <div className={`card text-center ${result.queued ? 'ring-amber-300' : 'ring-emerald-300'}`}>
         <div className="text-5xl">{result.queued ? '📴' : '✅'}</div>
-        <h1 className="mt-2 text-xl font-bold">{result.queued ? 'Saved on phone' : 'Jar entry saved successfully.'}</h1>
-        {result.queued && <p className="text-sm text-slate-600">It will sync automatically when internet is back.</p>}
+        <h1 className="mt-2 text-xl font-bold">{result.queued ? t('entry.savedOnPhone') : t('entry.savedOk')}</h1>
+        {result.queued && <p className="text-sm text-slate-600">{t('entry.willSync')}</p>}
 
         <div className="mt-4 space-y-1.5 rounded-2xl bg-slate-50 p-4 text-left">
-          <Row label="Customer" value={result.customer_name} />
-          <Row label={isGive ? 'Given' : 'Returned'} value={`${result.jar_quantity} jars`} />
+          <Row label={t('entry.customer')} value={result.customer_name} />
+          <Row label={isGive ? t('entry.given') : t('entry.returned')} value={t('entry.jarsN', { n: result.jar_quantity })} />
           {!result.queued && (
             <>
               {isGive && (
                 <>
-                  <Row label="Rate" value={money(result.rate)} />
-                  <Row label="Total" value={money(result.amount)} />
-                  <Row label="Paid" value={money(result.paid_amount + result.advance_amount)} />
-                  <Row label="Udhari" value={money(result.udhari_amount)} />
+                  <Row label={t('entry.rateShort')} value={money(result.rate)} />
+                  <Row label={t('entry.total')} value={money(result.amount)} />
+                  <Row label={t('entry.paid')} value={money(result.paid_amount + result.advance_amount)} />
+                  <Row label={t('entry.udhari')} value={money(result.udhari_amount)} />
                 </>
               )}
-              <Row label="Current Jars" value={result.current_jars} strong />
-              <Row label="Total Pending" value={money(result.pending_amount)} strong />
+              <Row label={t('entry.currentJarsRow')} value={result.current_jars} strong />
+              <Row label={t('entry.totalPending')} value={money(result.pending_amount)} strong />
             </>
           )}
         </div>
@@ -275,20 +276,20 @@ function SavedCard({ result, settings, onNew }) {
 
       {!result.queued && (
         <button className="btn-wa w-full py-4 text-lg" onClick={sendWa}>
-          📱 Send WhatsApp
+          {t('entry.sendWa')}
         </button>
       )}
       <div className="grid grid-cols-2 gap-3">
         <button className="btn-primary" onClick={() => onNew(false)}>
-          ＋ New Entry
+          {t('entry.newEntry')}
         </button>
         <button className="btn-light" onClick={() => onNew(true)}>
-          Same Customer
+          {t('entry.sameCustomer')}
         </button>
       </div>
       {!result.queued && (
         <Link to={`/payments/new?customer=${result.customer_id}`} className="btn-light w-full">
-          💰 Receive Payment
+          {t('entry.receivePayment')}
         </Link>
       )}
     </div>

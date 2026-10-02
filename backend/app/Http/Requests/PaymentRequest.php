@@ -22,14 +22,14 @@ class PaymentRequest extends ApiRequest
     public function messages(): array
     {
         return [
-            'customer_id.required' => 'Please select a customer.',
-            'customer_id.exists' => 'Please select a valid customer.',
-            'payment_date.before_or_equal' => 'Date cannot be in the future.',
-            'amount.required' => 'Please enter paid amount.',
-            'amount.numeric' => 'Please enter a valid amount.',
-            'amount.gt' => 'Payment amount must be more than zero.',
-            'payment_mode.required' => 'Please choose payment mode.',
-            'payment_mode.in' => 'Invalid payment mode.',
+            'customer_id.required' => __('कृपया ग्राहक निवडा.'),
+            'customer_id.exists' => __('कृपया योग्य ग्राहक निवडा.'),
+            'payment_date.before_or_equal' => __('दिनांक भविष्यातील असू शकत नाही.'),
+            'amount.required' => __('कृपया भरलेली रक्कम टाका.'),
+            'amount.numeric' => __('कृपया योग्य रक्कम टाका.'),
+            'amount.gt' => __('पेमेंटची रक्कम शून्यापेक्षा जास्त असावी.'),
+            'payment_mode.required' => __('कृपया पेमेंट पद्धत निवडा.'),
+            'payment_mode.in' => __('चुकीची पेमेंट पद्धत.'),
         ];
     }
 }

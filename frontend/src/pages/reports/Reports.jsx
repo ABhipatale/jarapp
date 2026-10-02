@@ -2,16 +2,17 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import CustomerPicker from '../../components/CustomerPicker';
 import { Modal, PageHeader } from '../../components/ui';
+import { t } from '../../i18n';
 
 const REPORTS = [
-  { to: '/reports/daily', icon: '📅', title: 'Daily Report', sub: 'आजचा व्यवहार' },
-  { to: '/reports/weekly', icon: '🗓', title: 'Weekly Report', sub: 'Mon – Sun' },
-  { to: '/reports/monthly', icon: '📆', title: 'Monthly Report', sub: 'Month summary, damaged / lost' },
-  { ledger: true, icon: '📒', title: 'Customer Ledger', sub: 'Full statement of one customer' },
-  { to: '/reports/jar-status', icon: '💧', title: 'Jar Status Report', sub: 'कोणाकडे किती जार आहेत?' },
-  { to: '/reports/cash', icon: '💵', title: 'Cash Report', sub: 'Day-wise cash, UPI, expenses' },
-  { to: '/reports/udhari', icon: '📒', title: 'Udhari Report', sub: 'Udhari given & recovered' },
-  { to: '/reports/pending', icon: '⏳', title: 'Pending Payment Report', sub: 'कोणाकडून पैसे घ्यायचे आहेत?' },
+  { to: '/reports/daily', icon: '📅', title: t('rep.daily.title'), sub: t('rep.daily.sub') },
+  { to: '/reports/weekly', icon: '🗓', title: t('rep.weekly.title'), sub: t('rep.weekly.sub') },
+  { to: '/reports/monthly', icon: '📆', title: t('rep.monthly.title'), sub: t('rep.monthly.sub') },
+  { ledger: true, icon: '📒', title: t('rep.ledger.title'), sub: t('rep.ledger.sub') },
+  { to: '/reports/jar-status', icon: '💧', title: t('rep.jarStatus.cardTitle'), sub: t('rep.jarStatus.sub') },
+  { to: '/reports/cash', icon: '💵', title: t('rep.cash.title'), sub: t('rep.cash.sub') },
+  { to: '/reports/udhari', icon: '📒', title: t('rep.udhari.title'), sub: t('rep.udhari.sub') },
+  { to: '/reports/pending', icon: '⏳', title: t('rep.pending.cardTitle'), sub: t('rep.pending.sub') },
 ];
 
 export default function Reports() {
@@ -20,7 +21,7 @@ export default function Reports() {
 
   return (
     <div>
-      <PageHeader title="Reports" />
+      <PageHeader title={t('rep.title')} />
       <div className="space-y-2.5">
         {REPORTS.map((r) => {
           const inner = (
@@ -46,7 +47,7 @@ export default function Reports() {
       </div>
 
       {pickLedger && (
-        <Modal title="Choose customer" onClose={() => setPickLedger(false)}>
+        <Modal title={t('rep.chooseCustomer')} onClose={() => setPickLedger(false)}>
           <div className="min-h-80">
             <CustomerPicker includeInactive value="" onChange={(id) => id && navigate(`/customers/${id}/ledger`)} />
           </div>

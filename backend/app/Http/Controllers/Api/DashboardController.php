@@ -15,7 +15,7 @@ class DashboardController extends Controller
         $request->validate([
             'from' => ['nullable', 'date_format:Y-m-d'],
             'to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from'],
-        ], ['to.after_or_equal' => 'End date must be after start date.']);
+        ], ['to.after_or_equal' => __('शेवटचा दिनांक सुरुवातीच्या दिनांकानंतरचा असावा.')]);
 
         $today = now()->toDateString();
         $from = $request->input('from', $today);

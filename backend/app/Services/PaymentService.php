@@ -33,7 +33,7 @@ class PaymentService
                 if ($amount > max($pending, 0) && ! $isAdvance) {
                     $shown = number_format(max($pending, 0), 2);
                     throw ValidationException::withMessages([
-                        'amount' => "Payment is more than pending amount (₹{$shown}). Tick 'Advance payment' to accept extra money.",
+                        'amount' => __('पेमेंट बाकी रकमेपेक्षा (₹:pending) जास्त आहे. जास्तीची रक्कम घेण्यासाठी "आगाऊ पेमेंट" निवडा.', ['pending' => $shown]),
                     ]);
                 }
 

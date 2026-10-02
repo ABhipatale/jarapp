@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge, Empty, ErrorBox, Fab, Loader, PageHeader, PendingText } from '../components/ui';
+import { t } from '../i18n';
 import { useApi, useDebounced } from '../lib/useApi';
 
 const FILTERS = [
-  { key: '', label: 'All' },
-  { key: 'active', label: 'Active' },
-  { key: 'pending', label: 'Udhari' },
-  { key: 'jars', label: 'Has Jars' },
-  { key: 'inactive', label: 'Inactive' },
+  { key: '', label: t('cust.filter.all') },
+  { key: 'active', label: t('cust.filter.active') },
+  { key: 'pending', label: t('cust.filter.pending') },
+  { key: 'jars', label: t('cust.filter.jars') },
+  { key: 'inactive', label: t('cust.filter.inactive') },
 ];
 
 export default function Customers() {
@@ -23,10 +24,10 @@ export default function Customers() {
 
   return (
     <div>
-      <PageHeader title="Customers" subtitle={data ? `${list.length} customers` : ''} />
+      <PageHeader title={t('cust.title')} subtitle={data ? t('cust.count', { n: list.length }) : ''} />
 
       <div className="sticky top-[60px] z-20 -mx-4 bg-slate-100/95 px-4 pb-3 pt-1 backdrop-blur">
-        <input className="input" type="search" placeholder="🔍 Search name or mobile" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input className="input" type="search" placeholder={t('common.search')} value={search} onChange={(e) => setSearch(e.target.value)} />
         <div className="no-scrollbar -mx-4 mt-2 flex gap-2 overflow-x-auto px-4">
           {FILTERS.map((f) => (
             <button key={f.key} className={`chip ${filter === f.key ? 'chip-active' : ''}`} onClick={() => setFilter(f.key)}>
@@ -38,7 +39,7 @@ export default function Customers() {
 
       {error && <ErrorBox message={error} onRetry={reload} />}
       {loading && !data && <Loader />}
-      {data && list.length === 0 && <Empty>No customers found.</Empty>}
+      {data && list.length === 0 && <Empty>{t('cust.none')}</Empty>}
 
       <div className="space-y-2.5">
         {list.map((c) => (
@@ -55,7 +56,7 @@ export default function Customers() {
             </div>
             <div className="shrink-0 text-right text-sm">
               <div>
-                💧 <b>{c.current_jars}</b> jars
+                💧 <b>{c.current_jars}</b> {t('common.jarsWord')}
               </div>
               <PendingText amount={c.pending_amount} />
             </div>
@@ -63,7 +64,7 @@ export default function Customers() {
         ))}
       </div>
 
-      <Fab to="/customers/new" label="Add Customer" />
+      <Fab to="/customers/new" label={t('cust.add')} />
     </div>
   );
 }

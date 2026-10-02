@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { fmtDate, money } from '../lib/format';
 import { Badge } from './ui';
 
@@ -8,15 +9,15 @@ export default function LedgerTable({ rows }) {
       <table className="tbl">
         <thead>
           <tr>
-            <th>Date</th>
-            <th className="num">Given</th>
-            <th className="num">Returned</th>
-            <th className="num">Net Jar</th>
-            <th className="num">Amount</th>
-            <th className="num">Paid</th>
-            <th className="num">Udhari</th>
-            <th className="num">Balance</th>
-            <th className="num">Jars</th>
+            <th>{t('ledger.date')}</th>
+            <th className="num">{t('ledger.given')}</th>
+            <th className="num">{t('ledger.returned')}</th>
+            <th className="num">{t('ledger.netJar')}</th>
+            <th className="num">{t('ledger.amount')}</th>
+            <th className="num">{t('ledger.paid')}</th>
+            <th className="num">{t('ledger.udhari')}</th>
+            <th className="num">{t('ledger.balance')}</th>
+            <th className="num">{t('ledger.jars')}</th>
           </tr>
         </thead>
         <tbody>
@@ -26,7 +27,7 @@ export default function LedgerTable({ rows }) {
                 {fmtDate(r.entry_date)}
                 {r.entry_type === 'payment' && (
                   <span className="ml-1.5">
-                    <Badge kind="cash">Payment</Badge>
+                    <Badge kind="cash">{t('ledger.payment')}</Badge>
                   </span>
                 )}
               </td>

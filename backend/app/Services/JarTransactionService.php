@@ -48,8 +48,8 @@ class JarTransactionService
                     if ($qty > $before['current_jars']) {
                         throw ValidationException::withMessages([
                             'jar_quantity' => $before['current_jars'] === 0
-                                ? 'This customer has no jars to return.'
-                                : "Customer has only {$before['current_jars']} jars. Cannot return {$qty}.",
+                                ? __('या ग्राहकाकडे परत करण्यासाठी जार नाहीत.')
+                                : __('ग्राहकाकडे फक्त :jars जार आहेत. :qty जार परत घेता येणार नाहीत.', ['jars' => $before['current_jars'], 'qty' => $qty]),
                         ]);
                     }
                     $row += ['payment_type' => 'cash', 'rate' => 0, 'amount' => 0, 'paid_amount' => 0, 'udhari_amount' => 0, 'advance_amount' => 0];
@@ -61,9 +61,9 @@ class JarTransactionService
                     if ($qty > $available) {
                         throw ValidationException::withMessages([
                             'jar_quantity' => match (true) {
-                                Jar::count() === 0 => 'No jars in stock yet. Add your jars first in the Jars screen.',
-                                $available <= 0 => 'No jars available in the shop. All jars are with customers or damaged/lost.',
-                                default => "Only {$available} jars available in the shop. Cannot give {$qty}.",
+                                Jar::count() === 0 => __("अजून स्टॉकमध्ये जार नाहीत. आधी 'जार' विभागात जार जोडा."),
+                                $available <= 0 => __('दुकानात एकही जार उपलब्ध नाही. सर्व जार ग्राहकांकडे आहेत किंवा खराब/हरवलेले आहेत.'),
+                                default => __('दुकानात फक्त :available जार उपलब्ध आहेत. :qty जार देता येणार नाहीत.', ['available' => $available, 'qty' => $qty]),
                             },
                         ]);
                     }
@@ -77,7 +77,7 @@ class JarTransactionService
 
                     if ($paid > $amount) {
                         throw ValidationException::withMessages([
-                            'paid_amount' => 'Paid amount cannot be more than the bill amount. Enter the extra money as Advance.',
+                            'paid_amount' => __('भरलेली रक्कम बिलापेक्षा जास्त असू शकत नाही. जास्तीची रक्कम आगाऊ म्हणून टाका.'),
                         ]);
                     }
 
@@ -118,7 +118,7 @@ class JarTransactionService
                 $available = $this->jars->summary()['available_jars'];
                 if ($tx->jar_quantity > $available) {
                     throw ValidationException::withMessages([
-                        'transaction' => "Cannot delete: only {$available} jars are in the shop, this return was {$tx->jar_quantity}.",
+                        'transaction' => __('हटवता येत नाही: दुकानात फक्त :available जार आहेत, ही परत नोंद :qty जारची होती.', ['available' => $available, 'qty' => $tx->jar_quantity]),
                     ]);
                 }
             }
@@ -127,7 +127,7 @@ class JarTransactionService
                 $jars = $this->balances->forCustomer($tx->customer_id)['current_jars'];
                 if ($jars - $tx->jar_quantity < 0) {
                     throw ValidationException::withMessages([
-                        'transaction' => 'Cannot delete: some of these jars are already returned. Delete the return entry first.',
+                        'transaction' => __('हटवता येत नाही: यातील काही जार आधीच परत आले आहेत. आधी परत जारची नोंद हटवा.'),
                     ]);
                 }
             }

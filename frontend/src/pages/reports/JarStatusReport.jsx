@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import ExportBar from '../../components/ExportBar';
 import { Empty, ErrorBox, Loader, PageHeader, PendingText, PrintHeader, StatCard } from '../../components/ui';
 import { useSettings } from '../../context/SettingsContext';
+import { lang, t } from '../../i18n';
 import { exportExcel } from '../../lib/export';
 import { fmtDate, today } from '../../lib/format';
 import { useApi, useDebounced } from '../../lib/useApi';
@@ -20,8 +21,8 @@ export default function JarStatusReport() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Jar Status" subtitle="कोणाकडे किती जार आहेत?" back="/reports" />
-      <PrintHeader settings={settings} title="Jar Status Report" subtitle={`As on ${fmtDate(today())}`} />
+      <PageHeader title={t('rep.jarStatus.title')} subtitle={t('rep.jarStatus.sub')} back="/reports" />
+      <PrintHeader settings={settings} title={t('rep.jarStatus.cardTitle')} subtitle={t('rep.asOn', { date: fmtDate(today()) })} />
       <ReportFilters customerId={customerId} onCustomer={setCustomerId} search={search} onSearch={setSearch} />
       {error && <ErrorBox message={error} onRetry={reload} />}
       {loading && !data && <Loader />}
@@ -30,37 +31,41 @@ export default function JarStatusReport() {
           <ExportBar
             onExcel={() =>
               exportExcel(
-                `Jar-Status-${today()}`,
-                'Jar Status',
+                `${t('rep.jarStatus.file')}-${today()}`,
+                t('rep.jarStatus.sheet'),
                 [
-                  { label: 'Customer', key: 'name' },
-                  { label: 'Mobile', key: 'mobile' },
-                  { label: 'Jars With Customer', key: 'current_jars' },
-                  { label: 'Pending', key: 'pending_amount' },
+                  { label: t('rep.col.customer'), key: 'name' },
+                  { label: t('rep.col.mobile'), key: 'mobile' },
+                  { label: t('rep.jarStatus.col.withCustomer'), key: 'current_jars' },
+                  { label: t('rep.col.pending'), key: 'pending_amount' },
                 ],
                 rows,
-                [settings.business_name, `Jar Status as on ${fmtDate(today())}`, `Total ${s.total_jars} | Available ${s.available_jars} | With customers ${s.customer_jars} | Damaged ${s.damaged_jars} | Lost ${s.lost_jars}`]
+                [
+                  lang === 'en' ? settings.business_name || 'Sai Water Suppliers' : settings.business_name_mr || 'साई वॉटर सप्लायर्स',
+                  t('rep.jarStatus.titleLine', { date: fmtDate(today()) }),
+                  t('rep.jarStatus.summaryLine', { total: s.total_jars, available: s.available_jars, customers: s.customer_jars, damaged: s.damaged_jars, lost: s.lost_jars }),
+                ]
               )
             }
           />
           <div className="grid grid-cols-2 gap-3">
-            <StatCard label="Available" value={s.available_jars} tone="green" />
-            <StatCard label="With Customers" value={s.customer_jars} tone="blue" />
-            <StatCard label="Total" value={s.total_jars} tone="slate" />
-            <StatCard label="Damaged / Lost" value={`${s.damaged_jars} / ${s.lost_jars}`} tone="red" />
+            <StatCard label={t('rep.jarStatus.available')} value={s.available_jars} tone="green" />
+            <StatCard label={t('rep.jarStatus.withCustomers')} value={s.customer_jars} tone="blue" />
+            <StatCard label={t('rep.jarStatus.total')} value={s.total_jars} tone="slate" />
+            <StatCard label={t('rep.jarStatus.damagedLost')} value={`${s.damaged_jars} / ${s.lost_jars}`} tone="red" />
           </div>
           <section className="card">
             {rows.length === 0 ? (
-              <Empty>No jars with customers.</Empty>
+              <Empty>{t('rep.jarStatus.empty')}</Empty>
             ) : (
               <div className="table-wrap">
                 <table className="tbl">
                   <thead>
                     <tr>
-                      <th>Customer</th>
-                      <th>Mobile</th>
-                      <th className="num">Jars</th>
-                      <th className="num">Pending</th>
+                      <th>{t('rep.col.customer')}</th>
+                      <th>{t('rep.col.mobile')}</th>
+                      <th className="num">{t('rep.col.jars')}</th>
+                      <th className="num">{t('rep.col.pending')}</th>
                     </tr>
                   </thead>
                   <tbody>

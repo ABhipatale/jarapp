@@ -46,7 +46,7 @@ class JarTransactionController extends Controller
         $tx->load('customer:id,name,mobile');
 
         return response()->json([
-            'message' => 'Jar entry saved successfully.',
+            'message' => __('जार नोंद यशस्वीरित्या जतन झाली.'),
             'duplicate' => ! $created,
             'data' => $this->present($tx) + [
                 'current_jars' => $balance['current_jars'],
@@ -59,7 +59,7 @@ class JarTransactionController extends Controller
     {
         $this->service->delete($jarTransaction);
 
-        return response()->json(['message' => 'Entry deleted.']);
+        return response()->json(['message' => __('नोंद हटवली.')]);
     }
 
     private function present(JarTransaction $t): array

@@ -45,11 +45,11 @@ class JarController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate(['quantity' => ['required', 'integer', 'min:1', 'max:5000']], [
-            'quantity.min' => 'Quantity must be at least 1.',
+            'quantity.min' => __('संख्या किमान 1 असावी.'),
         ]);
         $this->jars->addJars($data['quantity']);
 
-        return response()->json(['message' => "{$data['quantity']} jars added.", 'summary' => $this->jars->summary()], 201);
+        return response()->json(['message' => __(':qty जार जोडले.', ['qty' => $data['quantity']]), 'summary' => $this->jars->summary()], 201);
     }
 
     /** Quantity-based: mark N jars damaged / lost, or bring N back (repaired / found). */
@@ -59,11 +59,11 @@ class JarController extends Controller
             'action' => ['required', 'in:damaged,lost,repaired,found'],
             'quantity' => ['required', 'integer', 'min:1', 'max:5000'],
             'date' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
-        ], ['quantity.min' => 'Quantity must be at least 1.']);
+        ], ['quantity.min' => __('संख्या किमान 1 असावी.')]);
 
         $this->jars->adjust($data['action'], $data['quantity'], $data['date'] ?? now()->toDateString());
 
-        return response()->json(['message' => 'Jar stock updated.', 'summary' => $this->jars->summary()]);
+        return response()->json(['message' => __('जार स्टॉक अपडेट झाला.'), 'summary' => $this->jars->summary()]);
     }
 
     /** Individual tracking: change one jar's status. */
@@ -72,10 +72,10 @@ class JarController extends Controller
         $data = $request->validate([
             'status' => ['required', Rule::in(Jar::STATUSES)],
             'customer_id' => ['nullable', 'integer', Rule::exists('customers', 'id')->whereNull('deleted_at')],
-        ], ['status.in' => 'Invalid jar status.']);
+        ], ['status.in' => __('चुकीची जार स्थिती.')]);
 
         $this->jars->setStatus($jar, $data['status'], $data['customer_id'] ?? null);
 
-        return response()->json(['message' => 'Jar updated.', 'summary' => $this->jars->summary()]);
+        return response()->json(['message' => __('जार अपडेट झाला.'), 'summary' => $this->jars->summary()]);
     }
 }

@@ -3,6 +3,7 @@ import ExportBar from '../../components/ExportBar';
 import RangeFilter, { initialRange } from '../../components/RangeFilter';
 import { Empty, ErrorBox, Loader, PageHeader, PendingText, PrintHeader, StatCard } from '../../components/ui';
 import { useSettings } from '../../context/SettingsContext';
+import { lang, t } from '../../i18n';
 import { exportExcel } from '../../lib/export';
 import { fmtDate, money } from '../../lib/format';
 import { useApi, useDebounced } from '../../lib/useApi';
@@ -20,41 +21,41 @@ export default function UdhariReport() {
   const period = `${fmtDate(range.from)} – ${fmtDate(range.to)}`;
 
   const cols = [
-    { label: 'Customer', key: 'name' },
-    { label: 'Mobile', key: 'mobile' },
-    { label: 'Udhari Given', key: 'udhari' },
-    { label: 'Payments Received', key: 'payments' },
-    { label: 'Pending Now', key: 'pending_amount' },
+    { label: t('rep.col.customer'), key: 'name' },
+    { label: t('rep.col.mobile'), key: 'mobile' },
+    { label: t('rep.udhari.given'), key: 'udhari' },
+    { label: t('rep.udhari.col.recovered'), key: 'payments' },
+    { label: t('rep.udhari.pendingNow'), key: 'pending_amount' },
   ];
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Udhari Report" subtitle={period} back="/reports" />
-      <PrintHeader settings={settings} title="Udhari Report" subtitle={period} />
+      <PageHeader title={t('rep.udhari.title')} subtitle={period} back="/reports" />
+      <PrintHeader settings={settings} title={t('rep.udhari.title')} subtitle={period} />
       <RangeFilter value={range} onChange={setRange} />
       <ReportFilters customerId={customerId} onCustomer={setCustomerId} search={search} onSearch={setSearch} />
       {error && <ErrorBox message={error} onRetry={reload} />}
       {loading && !data && <Loader />}
       {s && (
         <>
-          <ExportBar onExcel={() => exportExcel(`Udhari-Report-${range.from}`, 'Udhari', cols, rows, [settings.business_name, `Udhari Report: ${period}`])} />
+          <ExportBar onExcel={() => exportExcel(`${t('rep.udhari.file')}-${range.from}`, t('rep.udhari.sheet'), cols, rows, [(lang === 'en' ? settings.business_name || 'Sai Water Suppliers' : settings.business_name_mr || 'साई वॉटर सप्लायर्स'), t('rep.udhari.titleLine', { period })])} />
           <div className="grid grid-cols-3 gap-2">
-            <StatCard label="Udhari Given" value={money(s.udhari)} tone="amber" />
-            <StatCard label="Recovered" value={money(s.payments)} tone="green" />
-            <StatCard label="Pending Now" value={money(s.pending)} tone="red" />
+            <StatCard label={t('rep.udhari.given')} value={money(s.udhari)} tone="amber" />
+            <StatCard label={t('rep.udhari.recovered')} value={money(s.payments)} tone="green" />
+            <StatCard label={t('rep.udhari.pendingNow')} value={money(s.pending)} tone="red" />
           </div>
           <section className="card">
             {rows.length === 0 ? (
-              <Empty>No udhari in this period.</Empty>
+              <Empty>{t('rep.udhari.empty')}</Empty>
             ) : (
               <div className="table-wrap">
                 <table className="tbl">
                   <thead>
                     <tr>
-                      <th>Customer</th>
-                      <th className="num">Udhari Given</th>
-                      <th className="num">Paid Back</th>
-                      <th className="num">Pending Now</th>
+                      <th>{t('rep.col.customer')}</th>
+                      <th className="num">{t('rep.udhari.given')}</th>
+                      <th className="num">{t('rep.udhari.paidBack')}</th>
+                      <th className="num">{t('rep.udhari.pendingNow')}</th>
                     </tr>
                   </thead>
                   <tbody>

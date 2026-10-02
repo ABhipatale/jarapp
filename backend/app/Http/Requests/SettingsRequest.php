@@ -34,10 +34,10 @@ class SettingsRequest extends ApiRequest
     public function messages(): array
     {
         return [
-            'business_name.required' => 'Please enter business name.',
-            'business_mobile.regex' => 'Please enter a valid 10-digit mobile number.',
-            'total_jars.min' => 'Total jars cannot be negative.',
-            'default_rate.min' => 'Rate cannot be negative.',
+            'business_name.required' => __('कृपया व्यवसायाचे नाव टाका.'),
+            'business_mobile.regex' => __('कृपया योग्य 10 अंकी मोबाईल नंबर टाका.'),
+            'total_jars.min' => __('एकूण जार उणे असू शकत नाहीत.'),
+            'default_rate.min' => __('दर उणे असू शकत नाही.'),
         ];
     }
 }

@@ -5,21 +5,23 @@ import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
 import { useUi } from '../context/UiContext';
 import { discard, outboxItems, subscribe, syncOutbox } from '../lib/outbox';
+import { t } from '../i18n';
+import { businessName, businessPlace } from '../lib/format';
 import { DevCredit } from './ui';
 
 const NAV = [
-  { to: '/', label: 'Dashboard', icon: '🏠', end: true },
-  { to: '/customers', label: 'Customers', icon: '👥' },
-  { to: '/jars', label: 'Jars', icon: '💧' },
-  { to: '/entry', label: 'Entry', icon: '➕', main: true },
-  { to: '/payments', label: 'Payments', icon: '💰' },
-  { to: '/reports', label: 'Reports', icon: '📊' },
+  { to: '/', label: t('nav.home'), icon: '🏠', end: true },
+  { to: '/customers', label: t('nav.customers'), icon: '👥' },
+  { to: '/jars', label: t('nav.jars'), icon: '💧' },
+  { to: '/entry', label: t('nav.entry'), icon: '➕', main: true },
+  { to: '/payments', label: t('nav.payments'), icon: '💰' },
+  { to: '/reports', label: t('nav.reports'), icon: '📊' },
 ];
 
 const MENU = [
-  { to: '/transactions', label: 'All Jar Entries', icon: '📋' },
-  { to: '/expenses', label: 'Expenses', icon: '🧾' },
-  { to: '/settings', label: 'Settings', icon: '⚙️' },
+  { to: '/transactions', label: t('nav.allJarEntries'), icon: '📋' },
+  { to: '/expenses', label: t('nav.expenses'), icon: '🧾' },
+  { to: '/settings', label: t('nav.settings'), icon: '⚙️' },
 ];
 
 export default function Layout() {
@@ -38,15 +40,15 @@ export default function Layout() {
     const unsub = subscribe(setQueue);
     const trySync = async () => {
       const n = await syncOutbox();
-      if (n) toast(`${n} offline ${n === 1 ? 'entry' : 'entries'} synced.`);
+      if (n) toast(t(n === 1 ? 'layout.syncedOne' : 'layout.synced', { n }));
     };
     const on = () => { setOnline(true); trySync(); };
     const off = () => setOnline(false);
     window.addEventListener('online', on);
     window.addEventListener('offline', off);
     trySync();
-    const t = setInterval(trySync, 30000);
-    return () => { unsub(); window.removeEventListener('online', on); window.removeEventListener('offline', off); clearInterval(t); };
+    const timer = setInterval(trySync, 30000);
+    return () => { unsub(); window.removeEventListener('online', on); window.removeEventListener('offline', off); clearInterval(timer); };
   }, [toast]);
 
   const failed = queue.filter((q) => q.error);
@@ -58,19 +60,19 @@ export default function Layout() {
           <Link to="/" className="flex min-w-0 flex-1 items-center gap-2.5">
             <img src={logo} alt="" className="h-10 w-8 rounded-md bg-white object-contain p-0.5" />
             <div className="min-w-0 leading-tight">
-              <div className="truncate font-bold">{settings.business_name || 'Sai Water Suppliers'}</div>
-              <div className="truncate text-xs text-blue-100">{settings.business_address || 'Kolewadi'} · Jar Management</div>
+              <div className="truncate font-bold">{businessName(settings)}</div>
+              <div className="truncate text-xs text-blue-100">{`${businessPlace(settings)} · ${t('common.jarMgmt')}`}</div>
             </div>
           </Link>
-          <button className="grid h-10 w-10 place-items-center rounded-full text-2xl hover:bg-white/15" onClick={() => setMenu((m) => !m)} aria-label="Menu">
+          <button className="grid h-10 w-10 place-items-center rounded-full text-2xl hover:bg-white/15" onClick={() => setMenu((m) => !m)} aria-label={t('layout.menu')}>
             ☰
           </button>
         </div>
 
         {(!online || queue.length > 0) && (
           <button onClick={() => setShowQueue((s) => !s)} className={`block w-full px-4 py-1.5 text-left text-sm ${failed.length ? 'bg-red-600' : 'bg-amber-500'} text-white`}>
-            {!online ? '📴 Offline — showing last saved data. ' : ''}
-            {queue.length > 0 && `${queue.length} ${queue.length === 1 ? 'entry' : 'entries'} waiting to sync${failed.length ? ` (${failed.length} need attention)` : ''} ›`}
+            {!online ? t('layout.offline') : ''}
+            {queue.length > 0 && `${t(queue.length === 1 ? 'layout.waitingOne' : 'layout.waiting', { n: queue.length })}${failed.length ? t('layout.needAttention', { n: failed.length }) : ''} ›`}
           </button>
         )}
 
@@ -85,11 +87,11 @@ export default function Layout() {
               className="flex w-full items-center gap-3 border-t px-4 py-3.5 text-left text-red-600 hover:bg-red-50"
               onClick={async () => {
                 setMenu(false);
-                if (queue.length && !(await confirm({ message: 'Some offline entries are not synced yet. They will stay on this phone. Logout anyway?', confirmText: 'Logout' }))) return;
+                if (queue.length && !(await confirm({ message: t('layout.logoutConfirm'), confirmText: t('nav.logout') }))) return;
                 logout();
               }}
             >
-              <span>🚪</span> Logout
+              <span>🚪</span> {t('nav.logout')}
             </button>
           </div>
         )}
@@ -97,21 +99,21 @@ export default function Layout() {
 
       {showQueue && queue.length > 0 && (
         <div className="no-print m-4 mb-0 rounded-2xl bg-white p-4 shadow ring-1 ring-amber-300">
-          <div className="mb-2 font-semibold">Waiting to sync</div>
+          <div className="mb-2 font-semibold">{t('layout.waitingTitle')}</div>
           {queue.map((q) => (
             <div key={q.id} className="flex items-start justify-between gap-2 border-t py-2 text-sm">
               <div>
                 <div>{q.label}</div>
-                {q.error && <div className="text-red-600">Not saved: {q.error}</div>}
+                {q.error && <div className="text-red-600">{t('layout.notSaved', { error: q.error })}</div>}
               </div>
               {q.error && (
                 <button className="btn-light btn-sm" onClick={() => discard(q.id)}>
-                  Discard
+                  {t('layout.discard')}
                 </button>
               )}
             </div>
           ))}
-          <p className="mt-2 text-xs text-slate-500">Entries sync automatically when internet is back. Each entry is saved only once.</p>
+          <p className="mt-2 text-xs text-slate-500">{t('layout.syncNote')}</p>
         </div>
       )}
 

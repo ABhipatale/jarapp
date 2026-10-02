@@ -1,4 +1,5 @@
 import { useUi } from '../context/UiContext';
+import { t } from '../i18n';
 import { printPage } from '../lib/export';
 
 /** Excel / PDF / Print buttons (+ optional extra, e.g. WhatsApp). */
@@ -14,14 +15,14 @@ export default function ExportBar({ onExcel, extra }) {
       <button
         className="btn-light btn-sm shrink-0"
         onClick={() => {
-          toast('Choose “Save as PDF” in the print window.', 'info');
+          toast(t('export.pdfHint'), 'info');
           setTimeout(printPage, 400);
         }}
       >
         📄 PDF
       </button>
       <button className="btn-light btn-sm shrink-0" onClick={printPage}>
-        🖨 Print
+        🖨 {t('export.print')}
       </button>
       {extra}
     </div>

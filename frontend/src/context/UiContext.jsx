@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useRef, useState } from 'react';
+import { t } from '../i18n';
 
 /** Toasts, "Are you sure?" confirmation and small alert popups, available everywhere. */
 const UiContext = createContext(null);
@@ -18,8 +19,8 @@ export function UiProvider({ children }) {
 
   const confirm = useCallback((opts) => {
     setConfirmState({
-      title: 'Are you sure?',
-      confirmText: 'Yes, Delete',
+      title: t('common.confirmTitle'),
+      confirmText: t('common.confirmDelete'),
       danger: true,
       ...(typeof opts === 'string' ? { message: opts } : opts),
     });
@@ -33,7 +34,7 @@ export function UiProvider({ children }) {
    * alert({ title, message, icon, actionText }) resolves true if the action button was tapped.
    */
   const alert = useCallback((opts) => {
-    setAlertState({ title: 'Cannot save', icon: '⚠️', ...(typeof opts === 'string' ? { message: opts } : opts) });
+    setAlertState({ title: t('common.cannotSave'), icon: '⚠️', ...(typeof opts === 'string' ? { message: opts } : opts) });
     return new Promise((resolve) => {
       alertResolver.current = resolve;
     });
@@ -75,7 +76,7 @@ export function UiProvider({ children }) {
             <h2 className="text-lg font-bold">{confirmState.title}</h2>
             {confirmState.message && <p className="mt-1.5 text-slate-600">{confirmState.message}</p>}
             <div className="mt-5 grid grid-cols-2 gap-3">
-              <button className="btn-light" onClick={() => close(false)}>Cancel</button>
+              <button className="btn-light" onClick={() => close(false)}>{t('common.cancel')}</button>
               <button className={confirmState.danger ? 'btn-danger' : 'btn-primary'} onClick={() => close(true)} autoFocus>
                 {confirmState.confirmText}
               </button>
@@ -92,7 +93,7 @@ export function UiProvider({ children }) {
             <p className="mt-1.5 text-[15px] leading-snug text-slate-600">{alertState.message}</p>
             <div className={`mt-5 grid gap-2 ${alertState.actionText ? 'grid-cols-2' : ''}`}>
               <button className={alertState.actionText ? 'btn-light btn-sm' : 'btn-primary btn-sm'} onClick={() => closeAlert(false)} autoFocus={!alertState.actionText}>
-                OK
+                {t('common.ok')}
               </button>
               {alertState.actionText && (
                 <button className="btn-primary btn-sm" onClick={() => closeAlert(true)} autoFocus>

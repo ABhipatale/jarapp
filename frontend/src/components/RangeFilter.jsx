@@ -1,11 +1,12 @@
+import { t } from '../i18n';
 import { rangeFor, today } from '../lib/format';
 
 const PRESETS = [
-  { key: 'today', label: 'Today' },
-  { key: 'yesterday', label: 'Yesterday' },
-  { key: 'week', label: 'This Week' },
-  { key: 'month', label: 'This Month' },
-  { key: 'custom', label: 'Custom' },
+  { key: 'today', label: t('common.today') },
+  { key: 'yesterday', label: t('common.yesterday') },
+  { key: 'week', label: t('range.week') },
+  { key: 'month', label: t('range.month') },
+  { key: 'custom', label: t('range.custom') },
 ];
 
 /** Today / Yesterday / This Week / This Month / Custom range. value = { preset, from, to } */

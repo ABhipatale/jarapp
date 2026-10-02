@@ -25,19 +25,19 @@ class JarTransactionRequest extends ApiRequest
     public function messages(): array
     {
         return [
-            'customer_id.required' => 'Please select a customer.',
-            'customer_id.exists' => 'Please select a valid customer.',
-            'transaction_date.required' => 'Please select date.',
-            'transaction_date.before_or_equal' => 'Date cannot be in the future.',
-            'transaction_type.required' => 'Please choose Give Jar or Return Jar.',
-            'transaction_type.in' => 'Invalid transaction type.',
-            'jar_quantity.required' => 'Please enter jar quantity.',
-            'jar_quantity.integer' => 'Jar quantity must be a whole number.',
-            'jar_quantity.min' => 'Jar quantity must be at least 1.',
-            'payment_type.in' => 'Invalid payment type.',
-            'rate.min' => 'Rate cannot be negative.',
-            'paid_amount.min' => 'Paid amount cannot be negative.',
-            'advance_amount.min' => 'Advance amount cannot be negative.',
+            'customer_id.required' => __('कृपया ग्राहक निवडा.'),
+            'customer_id.exists' => __('कृपया योग्य ग्राहक निवडा.'),
+            'transaction_date.required' => __('कृपया दिनांक निवडा.'),
+            'transaction_date.before_or_equal' => __('दिनांक भविष्यातील असू शकत नाही.'),
+            'transaction_type.required' => __('कृपया जार दिले किंवा जार परत निवडा.'),
+            'transaction_type.in' => __('चुकीचा व्यवहार प्रकार.'),
+            'jar_quantity.required' => __('कृपया जारची संख्या टाका.'),
+            'jar_quantity.integer' => __('जारची संख्या पूर्ण अंकात असावी.'),
+            'jar_quantity.min' => __('जारची संख्या किमान 1 असावी.'),
+            'payment_type.in' => __('चुकीचा पेमेंट प्रकार.'),
+            'rate.min' => __('दर उणे असू शकत नाही.'),
+            'paid_amount.min' => __('भरलेली रक्कम उणे असू शकत नाही.'),
+            'advance_amount.min' => __('आगाऊ रक्कम उणे असू शकत नाही.'),
         ];
     }
 }

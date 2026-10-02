@@ -33,7 +33,7 @@ class SettingController extends Controller
             $this->settings->save($data);
         });
 
-        return response()->json($this->payload() + ['message' => 'Settings saved.']);
+        return response()->json($this->payload() + ['message' => __('सेटिंग्ज जतन झाल्या.')]);
     }
 
     private function payload(): array

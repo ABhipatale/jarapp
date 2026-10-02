@@ -45,7 +45,7 @@ class PaymentController extends Controller
         $payment->load('customer:id,name,mobile');
 
         return response()->json([
-            'message' => 'Payment received successfully.',
+            'message' => __('पेमेंट यशस्वीरित्या मिळाले.'),
             'duplicate' => ! $created,
             'data' => $this->present($payment),
         ], $created ? 201 : 200);
@@ -55,7 +55,7 @@ class PaymentController extends Controller
     {
         $this->service->delete($payment);
 
-        return response()->json(['message' => 'Payment deleted.']);
+        return response()->json(['message' => __('पेमेंट हटवले.')]);
     }
 
     private function present(Payment $p): array

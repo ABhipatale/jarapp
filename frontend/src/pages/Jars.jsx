@@ -5,18 +5,20 @@ import CustomerPicker from '../components/CustomerPicker';
 import { Badge, ErrorBox, Field, Loader, Modal, PageHeader, StatCard, Stepper } from '../components/ui';
 import { useSettings } from '../context/SettingsContext';
 import { useUi } from '../context/UiContext';
+import { t } from '../i18n';
 import { today } from '../lib/format';
 import { useApi } from '../lib/useApi';
 
 const ACTIONS = {
-  add: { title: 'Add New Jars', icon: '➕', btn: 'btn-primary' },
-  damaged: { title: 'Mark Jars Damaged', icon: '⚠️', btn: 'btn-danger' },
-  lost: { title: 'Mark Jars Lost', icon: '❓', btn: 'btn-danger' },
-  repaired: { title: 'Damaged Jars Repaired', icon: '🔧', btn: 'btn-primary' },
-  found: { title: 'Lost Jars Found', icon: '🔍', btn: 'btn-primary' },
+  add: { title: t('jars.add'), icon: '➕', btn: 'btn-primary' },
+  damaged: { title: t('jars.damaged'), icon: '⚠️', btn: 'btn-danger' },
+  lost: { title: t('jars.lost'), icon: '❓', btn: 'btn-danger' },
+  repaired: { title: t('jars.repaired'), icon: '🔧', btn: 'btn-primary' },
+  found: { title: t('jars.found'), icon: '🔍', btn: 'btn-primary' },
 };
 
 const STATUSES = ['available', 'with_customer', 'returned', 'damaged', 'lost'];
+const STATUS_LABELS = Object.fromEntries(STATUSES.map((st) => [st, t(`jars.st.${st}`)]));
 
 export default function Jars() {
   const { settings } = useSettings();
@@ -34,7 +36,7 @@ export default function Jars() {
 
   const runAction = async () => {
     const n = parseInt(qty, 10) || 0;
-    if (n < 1) return toast('Quantity must be at least 1.', 'error');
+    if (n < 1) return toast(t('entry.qtyMin'), 'error');
     setBusy(true);
     try {
       const res = action === 'add' ? await api.post('/jars', { quantity: n }) : await api.post('/jars/adjust', { action, quantity: n, date });
@@ -53,7 +55,7 @@ export default function Jars() {
     setBusy(true);
     try {
       await api.put(`/jars/${editJar.id}`, { status: editJar.status, customer_id: editJar.customer_id || null });
-      toast('Jar updated.');
+      toast(t('jars.updated'));
       setEditJar(null);
       reload();
     } catch (err) {
@@ -65,7 +67,7 @@ export default function Jars() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Jar Management" subtitle="जार स्टॉक" />
+      <PageHeader title={t('jars.title')} subtitle={t('jars.subtitle')} />
 
       {error && <ErrorBox message={error} onRetry={reload} />}
       {!data && loading && <Loader />}
@@ -74,17 +76,17 @@ export default function Jars() {
         <>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <StatCard label="Available Jars (in shop)" value={s.available_jars} icon="✅" tone="green" sub="Total − with customers − damaged − lost" />
+              <StatCard label={t('jars.availableLabel')} value={s.available_jars} icon="✅" tone="green" sub={t('jars.availableSub')} />
             </div>
-            <StatCard label="Total Jars" value={s.total_jars} icon="💧" tone="slate" />
-            <StatCard label="With Customers" value={s.customer_jars} icon="🏠" tone="blue" to="/reports/jar-status" />
-            <StatCard label="Damaged" value={s.damaged_jars} icon="⚠️" tone="red" />
-            <StatCard label="Lost" value={s.lost_jars} icon="❓" tone="amber" />
+            <StatCard label={t('jars.totalJars')} value={s.total_jars} icon="💧" tone="slate" />
+            <StatCard label={t('jars.withCustomers')} value={s.customer_jars} icon="🏠" tone="blue" to="/reports/jar-status" />
+            <StatCard label={t('jars.damagedStat')} value={s.damaged_jars} icon="⚠️" tone="red" />
+            <StatCard label={t('jars.lostStat')} value={s.lost_jars} icon="❓" tone="amber" />
           </div>
 
           {s.total_jars === 0 && (
             <div className="rounded-2xl bg-amber-50 p-4 text-amber-900 ring-1 ring-amber-200">
-              Start by adding how many jars the shop owns. Tap <b>Add New Jars</b> below.
+              {t('jars.startHint1')} <b>{t('jars.add')}</b> {t('jars.startHint2')}
             </div>
           )}
 
@@ -97,17 +99,17 @@ export default function Jars() {
           </div>
 
           <Link to="/reports/jar-status" className="card flex items-center justify-between">
-            <span>🏠 Which customer has how many jars?</span>
+            <span>{t('jars.whoHas')}</span>
             <span className="text-brand-700">›</span>
           </Link>
 
           {tracking ? (
             <section className="card">
-              <h2 className="mb-2 font-semibold">Jar Numbers</h2>
+              <h2 className="mb-2 font-semibold">{t('jars.numbers')}</h2>
               <div className="no-scrollbar -mx-4 mb-3 flex gap-2 overflow-x-auto px-4">
                 {['', ...STATUSES].map((st) => (
                   <button key={st} className={`chip ${statusFilter === st ? 'chip-active' : ''}`} onClick={() => setStatusFilter(st)}>
-                    {st ? st.replace('_', ' ') : 'All'}
+                    {st ? STATUS_LABELS[st] : t('jars.all')}
                   </button>
                 ))}
               </div>
@@ -120,11 +122,11 @@ export default function Jars() {
                   </button>
                 ))}
               </div>
-              {data.jars.last_page > 1 && <p className="mt-2 text-xs text-slate-500">Showing first {data.jars.data.length} of {data.jars.total} jars.</p>}
+              {data.jars.last_page > 1 && <p className="mt-2 text-xs text-slate-500">{t('jars.showingFirst', { n: data.jars.data.length, total: data.jars.total })}</p>}
             </section>
           ) : (
             <p className="text-center text-sm text-slate-500">
-              Jars are counted by quantity. To track each jar by number (JAR-001…), turn on <Link to="/settings" className="font-semibold text-brand-700">Individual jar tracking</Link> in Settings.
+              {t('jars.countHint1')} <Link to="/settings" className="font-semibold text-brand-700">{t('jars.countHintLink')}</Link> {t('jars.countHint2')}
             </p>
           )}
         </>
@@ -133,16 +135,16 @@ export default function Jars() {
       {action && (
         <Modal title={ACTIONS[action].title} onClose={() => setAction(null)}>
           <div className="space-y-4">
-            <Field group label="How many jars?">
+            <Field group label={t('jars.howMany')}>
               <Stepper value={qty} onChange={(v) => setQty(String(v))} min={1} />
             </Field>
             {action !== 'add' && (
-              <Field label="Date">
+              <Field label={t('entry.date')}>
                 <input type="date" className="input" value={date} max={today()} onChange={(e) => setDate(e.target.value)} />
               </Field>
             )}
             <button className={`${ACTIONS[action].btn} w-full`} disabled={busy} onClick={runAction}>
-              {busy ? 'Saving…' : 'Save'}
+              {busy ? t('entry.saving') : t('entry.save')}
             </button>
           </div>
         </Modal>
@@ -151,22 +153,22 @@ export default function Jars() {
       {editJar && (
         <Modal title={editJar.jar_number} onClose={() => setEditJar(null)}>
           <div className="space-y-4">
-            <Field group label="Status">
+            <Field group label={t('jars.status')}>
               <select className="input" value={editJar.status} onChange={(e) => setEditJar({ ...editJar, status: e.target.value })}>
                 {STATUSES.map((st) => (
                   <option key={st} value={st}>
-                    {st.replace('_', ' ')}
+                    {STATUS_LABELS[st]}
                   </option>
                 ))}
               </select>
             </Field>
             {editJar.status === 'with_customer' && (
-              <Field group label="Customer">
+              <Field group label={t('entry.customer')}>
                 <CustomerPicker value={editJar.customer_id || ''} onChange={(id) => setEditJar((j) => ({ ...j, customer_id: id }))} />
               </Field>
             )}
             <button className="btn-primary w-full" disabled={busy} onClick={saveJar}>
-              {busy ? 'Saving…' : 'Save'}
+              {busy ? t('entry.saving') : t('entry.save')}
             </button>
           </div>
         </Modal>

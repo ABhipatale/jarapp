@@ -1,4 +1,5 @@
 // Formatting + date helpers. All dates travel to the API as YYYY-MM-DD (local time).
+import { lang, t } from '../i18n';
 
 export function toISODate(d = new Date()) {
   const y = d.getFullYear();
@@ -63,14 +64,23 @@ export function fmtDate(iso) {
   return `${d}/${m}/${y}`;
 }
 
-/** Tue, 1 Oct 2026 */
+/** गुरु, 1, ऑक्टो 2026 (Marathi names, Western digits) / Thu, 1 Oct 2026 */
 export function fmtLongDate(iso = today()) {
-  return parseISODate(iso).toLocaleDateString('en-IN', {
+  return parseISODate(iso).toLocaleDateString(lang === 'mr' ? 'mr-IN-u-nu-latn' : 'en-IN', {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
     year: 'numeric',
   });
+}
+
+/** Business name / place in the app's language (header, Excel). */
+export function businessName(settings) {
+  return lang === 'mr' ? settings?.business_name_mr || t('common.businessName') : settings?.business_name || t('common.businessName');
+}
+
+export function businessPlace(settings) {
+  return lang === 'mr' ? settings?.business_place_mr || t('common.businessPlace') : settings?.business_address || t('common.businessPlace');
 }
 
 export function num(v) {

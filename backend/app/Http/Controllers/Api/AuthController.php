@@ -22,7 +22,7 @@ class AuthController extends Controller
             ->first();
 
         if (! $user || ! Hash::check($request->input('password'), $user->password)) {
-            throw ValidationException::withMessages(['login' => 'Wrong email/mobile or password.']);
+            throw ValidationException::withMessages(['login' => __('ईमेल/मोबाईल किंवा पासवर्ड चुकीचा आहे.')]);
         }
 
         // "Remember me" keeps the phone logged in for 90 days, otherwise 12 hours.
@@ -44,7 +44,7 @@ class AuthController extends Controller
     {
         $request->user()->currentAccessToken()?->delete();
 
-        return response()->json(['message' => 'Logged out.']);
+        return response()->json(['message' => __('लॉगआउट झाले.')]);
     }
 
     public function changePassword(Request $request)
@@ -53,13 +53,13 @@ class AuthController extends Controller
             'current_password' => ['required', 'current_password:sanctum'],
             'password' => ['required', 'confirmed', Password::min(6)],
         ], [
-            'current_password.current_password' => 'Current password is wrong.',
-            'password.confirmed' => 'New passwords do not match.',
-            'password.min' => 'New password must be at least 6 characters.',
+            'current_password.current_password' => __('सध्याचा पासवर्ड चुकीचा आहे.'),
+            'password.confirmed' => __('नवीन पासवर्ड जुळत नाहीत.'),
+            'password.min' => __('नवीन पासवर्ड किमान 6 अक्षरांचा असावा.'),
         ]);
 
         $request->user()->update(['password' => $request->input('password')]);
 
-        return response()->json(['message' => 'Password changed successfully.']);
+        return response()->json(['message' => __('पासवर्ड यशस्वीरित्या बदलला.')]);
     }
 }

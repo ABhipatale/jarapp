@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react';
 import api, { errorMessage } from '../api/client';
-import { Field, PageHeader } from '../components/ui';
+import { Field, PageHeader, Segmented } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
 import { useUi } from '../context/UiContext';
+import { LANGS, lang, setLang, t } from '../i18n';
 import { DEFAULT_TEMPLATES } from '../lib/whatsapp';
 
 const TEMPLATES = [
-  ['wa_delivery', 'Jar delivery message', '{customer_name} {date} {jar_quantity} {rate} {amount} {paid} {udhari} {current_jars}'],
-  ['wa_return', 'Jar return message', '{customer_name} {date} {returned_jars} {current_jars}'],
-  ['wa_payment', 'Payment receipt', '{customer_name} {date} {paid_amount} {previous_pending} {remaining_pending}'],
-  ['wa_reminder', 'Udhari reminder', '{customer_name} {pending_amount}'],
-  ['wa_summary', "Today's summary", '{date} {given} {returned} {cash} {udhari} {payments} {pending}'],
+  ['wa_delivery', t('set.tplDelivery'), '{customer_name} {date} {jar_quantity} {rate} {amount} {paid} {udhari} {current_jars}'],
+  ['wa_return', t('set.tplReturn'), '{customer_name} {date} {returned_jars} {current_jars}'],
+  ['wa_payment', t('set.tplPayment'), '{customer_name} {date} {paid_amount} {previous_pending} {remaining_pending}'],
+  ['wa_reminder', t('set.tplReminder'), '{customer_name} {pending_amount}'],
+  ['wa_summary', t('set.tplSummary'), '{date} {given} {returned} {cash} {udhari} {payments} {pending}'],
 ];
 
 export default function Settings() {
@@ -29,7 +30,7 @@ export default function Settings() {
     }).catch((e) => toast(errorMessage(e), 'error'));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!form) return <p className="py-10 text-center text-slate-500">Loading…</p>;
+  if (!form) return <p className="py-10 text-center text-slate-500">{t('set.loading')}</p>;
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
@@ -41,7 +42,7 @@ export default function Settings() {
       const { data } = await api.put('/settings', payload);
       setSettings(data);
       setForm(data);
-      toast('Settings saved.');
+      toast(t('set.saved'));
     } catch (err) {
       toast(errorMessage(err), 'error');
     } finally {
@@ -62,37 +63,43 @@ export default function Settings() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Settings" back />
+      <PageHeader title={t('set.title')} back />
+
+      <section className="card space-y-3">
+        <h2 className="font-semibold">{t('set.language')}</h2>
+        <Segmented value={lang} onChange={(v) => v !== lang && setLang(v)} options={Object.entries(LANGS).map(([value, label]) => ({ value, label }))} />
+        <p className="text-sm text-slate-500">{t('set.languageHint')}</p>
+      </section>
 
       <form onSubmit={save} className="space-y-4">
         <section className="card space-y-3">
-          <h2 className="font-semibold">Shop</h2>
-          <Field label="Business Name">
+          <h2 className="font-semibold">{t('set.shop')}</h2>
+          <Field label={t('set.businessName')}>
             <input className="input" value={form.business_name} onChange={set('business_name')} />
           </Field>
-          <Field label="Business Name (Marathi, for WhatsApp)">
+          <Field label={t('set.businessNameMr')}>
             <input className="input" value={form.business_name_mr} onChange={set('business_name_mr')} />
           </Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Address">
+            <Field label={t('set.address')}>
               <input className="input" value={form.business_address} onChange={set('business_address')} />
             </Field>
-            <Field label="Place (Marathi)">
+            <Field label={t('set.placeMr')}>
               <input className="input" value={form.business_place_mr} onChange={set('business_place_mr')} />
             </Field>
           </div>
-          <Field label="Business Mobile">
+          <Field label={t('set.businessMobile')}>
             <input className="input" type="tel" value={form.business_mobile || ''} onChange={set('business_mobile')} />
           </Field>
         </section>
 
         <section className="card space-y-3">
-          <h2 className="font-semibold">Jars</h2>
+          <h2 className="font-semibold">{t('set.jars')}</h2>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Total Jars Owned" hint="Changing this adds/removes jars in stock">
+            <Field label={t('set.totalJars')} hint={t('set.totalJarsHint')}>
               <input className="input" inputMode="numeric" value={form.total_jars} onChange={(e) => setForm({ ...form, total_jars: e.target.value.replace(/\D/g, '') })} />
             </Field>
-            <Field label="Default Rate per Jar (₹)">
+            <Field label={t('set.defaultRate')}>
               <input className="input" inputMode="decimal" value={form.default_rate} onChange={set('default_rate')} />
             </Field>
           </div>
@@ -103,20 +110,20 @@ export default function Settings() {
               checked={form.jar_tracking === '1' || form.jar_tracking === true}
               onChange={(e) => setForm({ ...form, jar_tracking: e.target.checked ? '1' : '0' })}
             />
-            Individual jar tracking (JAR-001, JAR-002…)
+            {t('set.jarTracking')}
           </label>
-          <Field label="Expense Types" hint="Comma separated">
+          <Field label={t('set.expenseTypes')} hint={t('set.expenseTypesHint')}>
             <input className="input" value={form.expense_types} onChange={set('expense_types')} />
           </Field>
         </section>
 
         <section className="card space-y-4">
-          <h2 className="font-semibold">WhatsApp Messages</h2>
+          <h2 className="font-semibold">{t('set.waMessages')}</h2>
           <p className="text-sm text-slate-500">
-            Leave a box empty to use the standard message. You can also use {'{shop_name}'} and {'{shop_place}'}.
+            {t('set.waHint')}
           </p>
           {TEMPLATES.map(([key, label, vars]) => (
-            <Field key={key} label={label} hint={`Values: ${vars}`}>
+            <Field key={key} label={label} hint={t('set.values', { vars })}>
               <textarea className="input font-mono text-sm" rows={6} value={form[key] || ''} placeholder={DEFAULT_TEMPLATES[key]} onChange={set(key)} />
             </Field>
           ))}
@@ -124,22 +131,22 @@ export default function Settings() {
 
         <div className="sticky-above-nav sticky z-20">
           <button className="btn-primary w-full py-4 shadow-lg" disabled={busy}>
-            {busy ? 'Saving…' : 'Save Settings'}
+            {busy ? t('entry.saving') : t('set.save')}
           </button>
         </div>
       </form>
 
       <form onSubmit={changePassword} className="card space-y-3">
-        <h2 className="font-semibold">Change Password</h2>
-        <p className="text-sm text-slate-500">Logged in as {user?.email}</p>
-        <input className="input" type="password" placeholder="Current password" autoComplete="current-password" value={pw.current_password} onChange={(e) => setPw({ ...pw, current_password: e.target.value })} />
-        <input className="input" type="password" placeholder="New password" autoComplete="new-password" value={pw.password} onChange={(e) => setPw({ ...pw, password: e.target.value })} />
-        <input className="input" type="password" placeholder="Repeat new password" autoComplete="new-password" value={pw.password_confirmation} onChange={(e) => setPw({ ...pw, password_confirmation: e.target.value })} />
-        <button className="btn-light w-full">Change Password</button>
+        <h2 className="font-semibold">{t('set.changePassword')}</h2>
+        <p className="text-sm text-slate-500">{t('set.loggedInAs', { email: user?.email || '' })}</p>
+        <input className="input" type="password" placeholder={t('set.currentPassword')} autoComplete="current-password" value={pw.current_password} onChange={(e) => setPw({ ...pw, current_password: e.target.value })} />
+        <input className="input" type="password" placeholder={t('set.newPassword')} autoComplete="new-password" value={pw.password} onChange={(e) => setPw({ ...pw, password: e.target.value })} />
+        <input className="input" type="password" placeholder={t('set.repeatPassword')} autoComplete="new-password" value={pw.password_confirmation} onChange={(e) => setPw({ ...pw, password_confirmation: e.target.value })} />
+        <button className="btn-light w-full">{t('set.changePassword')}</button>
       </form>
 
       <button className="btn-light w-full text-red-600" onClick={logout}>
-        🚪 Logout
+        {t('set.logout')}
       </button>
     </div>
   );

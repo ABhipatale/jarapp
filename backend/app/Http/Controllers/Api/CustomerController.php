@@ -39,7 +39,7 @@ class CustomerController extends Controller
         $customer = Customer::create($request->validated() + ['status' => 'active']);
 
         return (new CustomerResource($this->row($customer->id)))
-            ->additional(['message' => 'Customer added successfully.'])
+            ->additional(['message' => __('ग्राहक यशस्वीरित्या जोडला.')])
             ->response()->setStatusCode(201);
     }
 
@@ -53,7 +53,7 @@ class CustomerController extends Controller
         $customer->update(array_filter($request->validated(), fn ($v) => $v !== null) + ['address' => $request->input('address')]);
 
         return (new CustomerResource($this->row($customer->id)))
-            ->additional(['message' => 'Customer updated successfully.']);
+            ->additional(['message' => __('ग्राहक यशस्वीरित्या अपडेट झाला.')]);
     }
 
     /** Soft delete. Blocked while the customer still holds jars or owes money. */
@@ -62,13 +62,15 @@ class CustomerController extends Controller
         $b = $this->balances->forCustomer($customer->id);
         if ($b['current_jars'] > 0 || abs($b['pending']) > 0.004) {
             throw ValidationException::withMessages([
-                'customer' => "Cannot delete: customer has {$b['current_jars']} jars and ₹".number_format($b['pending'], 2)
-                    .' balance. Settle it first, or mark the customer Inactive.',
+                'customer' => __('हटवता येत नाही: ग्राहकाकडे :jars जार आणि ₹:pending बाकी आहे. आधी हिशोब पूर्ण करा, किंवा ग्राहकाला निष्क्रिय करा.', [
+                    'jars' => $b['current_jars'],
+                    'pending' => number_format($b['pending'], 2),
+                ]),
             ]);
         }
         $customer->delete();
 
-        return response()->json(['message' => 'Customer deleted.']);
+        return response()->json(['message' => __('ग्राहक हटवला.')]);
     }
 
     /** Statement with running balance. Optional ?from=&to= */

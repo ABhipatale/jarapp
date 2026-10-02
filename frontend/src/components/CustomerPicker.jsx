@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import api from '../api/client';
+import { t } from '../i18n';
 import { PendingText } from './ui';
 
 let cache = null; // shared across screens; refreshed on each mount
@@ -8,7 +9,7 @@ let cache = null; // shared across screens; refreshed on each mount
  * Search-as-you-type customer selector (name or mobile).
  * Loads the customer list once and filters on the phone — instant even on slow networks.
  */
-export default function CustomerPicker({ value, onChange, placeholder = 'Search name or mobile…', includeInactive = false, allowClear = false }) {
+export default function CustomerPicker({ value, onChange, placeholder = t('common.search'), includeInactive = false, allowClear = false }) {
   const [list, setList] = useState(cache || []);
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
@@ -52,14 +53,14 @@ export default function CustomerPicker({ value, onChange, placeholder = 'Search 
         <div className="min-w-0 flex-1">
           <div className="truncate font-semibold">{selected.name}</div>
           <div className="text-sm text-slate-600">
-            📱 {selected.mobile} · 💧 {selected.current_jars} jars · <PendingText amount={selected.pending_amount} />
+            📱 {selected.mobile} · 💧 {t('common.jarsCount', { n: selected.current_jars })} · <PendingText amount={selected.pending_amount} />
           </div>
         </div>
         <button type="button" className="btn-light btn-sm" onClick={() => { setQ(''); setOpen(true); }}>
-          Change
+          {t('common.change')}
         </button>
         {allowClear && (
-          <button type="button" className="btn-light btn-sm" onClick={() => onChange(null, null)} aria-label="Clear">
+          <button type="button" className="btn-light btn-sm" onClick={() => onChange(null, null)} aria-label={t('picker.clear')}>
             ✕
           </button>
         )}
@@ -79,7 +80,7 @@ export default function CustomerPicker({ value, onChange, placeholder = 'Search 
       />
       {open && (
         <div className="absolute z-40 mt-1 max-h-72 w-full overflow-y-auto rounded-xl bg-white shadow-xl ring-1 ring-slate-200">
-          {matches.length === 0 && <div className="p-4 text-center text-sm text-slate-500">No customer found</div>}
+          {matches.length === 0 && <div className="p-4 text-center text-sm text-slate-500">{t('picker.noCustomer')}</div>}
           {matches.map((c) => (
             <button
               type="button"

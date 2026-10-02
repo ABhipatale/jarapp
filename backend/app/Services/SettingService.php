@@ -15,7 +15,7 @@ class SettingService
         'business_mobile' => '',
         'default_rate' => '30',
         'jar_tracking' => '0',
-        'expense_types' => 'Diesel,Salary,Electricity,Jar Purchase,Repair,Other',
+        'expense_types' => 'डिझेल,पगार,वीज बिल,जार खरेदी,दुरुस्ती,इतर',
         'wa_delivery' => '',
         'wa_return' => '',
         'wa_payment' => '',

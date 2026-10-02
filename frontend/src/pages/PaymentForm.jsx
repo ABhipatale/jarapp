@@ -5,6 +5,7 @@ import CustomerPicker from '../components/CustomerPicker';
 import { Field, PageHeader, Segmented } from '../components/ui';
 import { useSettings } from '../context/SettingsContext';
 import { useUi } from '../context/UiContext';
+import { t } from '../i18n';
 import { fmtDate, money, num, round2, today, uuid } from '../lib/format';
 import { submit } from '../lib/outbox';
 import { messages, openWhatsApp } from '../lib/whatsapp';
@@ -33,22 +34,22 @@ export default function PaymentForm() {
 
   const save = async (e) => {
     e.preventDefault();
-    if (!customerId) return setError('Please select a customer.');
-    if (!(paid > 0)) return setError('Please enter paid amount.');
-    if (overPaying && !isAdvance) return setError(`Payment is more than pending amount (${money(Math.max(previous, 0))}). Tick “Advance payment” to accept extra money.`);
+    if (!customerId) return setError(t('entry.selectCustomer'));
+    if (!(paid > 0)) return setError(t('pay.enterAmount'));
+    if (overPaying && !isAdvance) return setError(t('pay.overPending', { amount: money(Math.max(previous, 0)) }));
     setBusy(true);
     setError('');
     try {
       const res = await submit(
         '/payments',
         { client_uuid: clientUuid, customer_id: Number(customerId), payment_date: date, amount: paid, payment_mode: mode, is_advance: isAdvance, notes: notes || null },
-        `Payment ${money(paid)} – ${customer?.name}`
+        t('pay.outbox', { amount: money(paid), name: customer?.name })
       );
       if (res.queued) {
-        toast('No internet. Payment saved on phone and will sync automatically.', 'info');
+        toast(t('pay.queuedToast'), 'info');
         setResult({ queued: true, customer_name: customer?.name, amount: paid });
       } else {
-        toast(res.data.message || 'Payment received successfully.');
+        toast(res.data.message || t('pay.receivedOk'));
         setResult(res.data.data);
       }
     } catch (err) {
@@ -63,18 +64,18 @@ export default function PaymentForm() {
       <div className="space-y-4">
         <div className="card text-center">
           <div className="text-5xl">{result.queued ? '📴' : '✅'}</div>
-          <h1 className="mt-2 text-xl font-bold">{result.queued ? 'Saved on phone – will sync' : 'Payment received successfully.'}</h1>
+          <h1 className="mt-2 text-xl font-bold">{result.queued ? t('pay.savedOnPhone') : t('pay.receivedOk')}</h1>
           <div className="mt-4 space-y-1.5 rounded-2xl bg-slate-50 p-4 text-left">
-            <Row label="Customer" value={result.customer_name} />
-            {!result.queued && <Row label="Date" value={fmtDate(result.payment_date)} />}
-            {!result.queued && <Row label="Previous Pending" value={money(result.previous_pending)} />}
-            <Row label="Paid" value={money(result.amount)} strong />
-            {!result.queued && <Row label="Remaining Pending" value={money(result.remaining_pending)} strong />}
+            <Row label={t('entry.customer')} value={result.customer_name} />
+            {!result.queued && <Row label={t('entry.date')} value={fmtDate(result.payment_date)} />}
+            {!result.queued && <Row label={t('pay.previousPending')} value={money(result.previous_pending)} />}
+            <Row label={t('entry.paid')} value={money(result.amount)} strong />
+            {!result.queued && <Row label={t('pay.remainingPending')} value={money(result.remaining_pending)} strong />}
           </div>
         </div>
         {!result.queued && (
           <button className="btn-wa w-full py-4 text-lg" onClick={() => openWhatsApp(result.customer_mobile, messages.payment(settings, result))}>
-            📱 Send WhatsApp Receipt
+            {t('pay.sendReceipt')}
           </button>
         )}
         <div className="grid grid-cols-2 gap-3">
@@ -90,10 +91,10 @@ export default function PaymentForm() {
               setClientUuid(uuid());
             }}
           >
-            ＋ New Payment
+            {t('pay.newPayment')}
           </button>
           <Link to="/payments" className="btn-light">
-            All Payments
+            {t('pay.allPayments')}
           </Link>
         </div>
       </div>
@@ -102,36 +103,36 @@ export default function PaymentForm() {
 
   return (
     <form onSubmit={save} className="space-y-4">
-      <PageHeader title="Receive Payment" subtitle="पेमेंट जमा" back />
+      <PageHeader title={t('pay.title')} subtitle={t('pay.subtitle')} back />
       <div className="card space-y-4">
-        <Field group label="Customer">
+        <Field group label={t('entry.customer')}>
           <CustomerPicker value={customerId} includeInactive onChange={(id, c) => { setCustomerId(id || ''); setCustomer(c); }} />
         </Field>
-        <Field label="Payment Date">
+        <Field label={t('pay.date')}>
           <input type="date" className="input" value={date} max={today()} onChange={(e) => setDate(e.target.value)} />
         </Field>
-        <Field group label="Previous Pending">
+        <Field group label={t('pay.previousPending')}>
           <div className={`input font-bold ${previous > 0 ? 'bg-red-50 text-red-700' : 'bg-slate-50'}`}>
-            {previous < 0 ? `${money(-previous)} advance` : money(previous)}
+            {previous < 0 ? t('pay.advanceAmt', { amount: money(-previous) }) : money(previous)}
           </div>
         </Field>
-        <Field label="Paid Amount (₹)">
+        <Field label={t('pay.paidAmount')}>
           <input className="input text-2xl font-bold" inputMode="decimal" value={amount} placeholder="0" onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ''))} />
         </Field>
         {previous > 0 && (
           <button type="button" className="btn-light btn-sm" onClick={() => setAmount(String(previous))}>
-            Full pending: {money(previous)}
+            {t('pay.fullPending', { amount: money(previous) })}
           </button>
         )}
-        <Field group label="Payment Mode">
+        <Field group label={t('pay.mode')}>
           <Segmented
             size="sm"
             value={mode}
             onChange={setMode}
             options={[
-              { value: 'cash', label: '💵 Cash' },
-              { value: 'upi', label: '📲 UPI' },
-              { value: 'bank', label: '🏦 Bank' },
+              { value: 'cash', label: t('entry.btnCash') },
+              { value: 'upi', label: t('entry.btnUpi') },
+              { value: 'bank', label: t('entry.btnBank') },
             ]}
           />
         </Field>
@@ -139,17 +140,17 @@ export default function PaymentForm() {
           <label className="flex items-start gap-3 rounded-xl bg-teal-50 p-3 text-teal-900">
             <input type="checkbox" className="mt-0.5 h-5 w-5 accent-teal-700" checked={isAdvance} onChange={(e) => setIsAdvance(e.target.checked)} />
             <span>
-              <b>Advance payment</b> — amount is more than pending. Keep {money(paid - Math.max(previous, 0))} as advance.
+              <b>{t('pay.advancePayment')}</b> {t('pay.advanceNote', { amount: money(paid - Math.max(previous, 0)) })}
             </span>
           </label>
         )}
-        <Field group label="Remaining Pending">
+        <Field group label={t('pay.remainingPending')}>
           <div className={`input font-bold ${remaining > 0 ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-700'}`}>
-            {remaining < 0 ? `${money(-remaining)} advance` : money(remaining)}
+            {remaining < 0 ? t('pay.advanceAmt', { amount: money(-remaining) }) : money(remaining)}
           </div>
         </Field>
-        <Field label="Notes">
-          <input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} placeholder="Optional" />
+        <Field label={t('entry.notes')}>
+          <input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} placeholder={t('entry.optional')} />
         </Field>
       </div>
 
@@ -157,7 +158,7 @@ export default function PaymentForm() {
 
       <div className="sticky-above-nav sticky z-20">
         <button className="btn w-full bg-emerald-600 py-4 text-lg text-white shadow-lg" disabled={busy}>
-          {busy ? 'Saving…' : `Save Payment ${paid > 0 ? money(paid) : ''}`}
+          {busy ? t('entry.saving') : t('pay.save', { amount: paid > 0 ? money(paid) : '' }).trim()}
         </button>
       </div>
     </form>

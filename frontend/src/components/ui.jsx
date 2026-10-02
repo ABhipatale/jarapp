@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { t, lang } from '../i18n';
 import { money } from '../lib/format';
 
 export function PageHeader({ title, back, right, subtitle }) {
@@ -9,7 +10,7 @@ export function PageHeader({ title, back, right, subtitle }) {
         <button
           onClick={() => (typeof back === 'string' ? navigate(back) : navigate(-1))}
           className="-ml-1 grid h-10 w-10 place-items-center rounded-full text-2xl text-slate-700 hover:bg-slate-200"
-          aria-label="Back"
+          aria-label={t('common.back')}
         >
           ‹
         </button>
@@ -62,17 +63,13 @@ const BADGES = {
   advance: 'bg-teal-100 text-teal-800',
 };
 
-const BADGE_TEXT = {
-  with_customer: 'With Customer',
-  given: 'Given',
-  returned: 'Returned',
-  upi: 'UPI',
-};
+const BADGE_KINDS = ['cash', 'udhari', 'available', 'with_customer', 'returned', 'damaged', 'lost', 'given', 'active', 'inactive', 'upi', 'bank', 'advance'];
+const badgeText = (kind) => (BADGE_KINDS.includes(kind) ? t(`ui.badge.${kind}`) : '');
 
 export function Badge({ kind, children }) {
   return (
     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${BADGES[kind] || BADGES.inactive}`}>
-      {children || BADGE_TEXT[kind] || (kind ? kind[0].toUpperCase() + kind.slice(1) : '')}
+      {children || badgeText(kind) || kind || ''}
     </span>
   );
 }
@@ -81,7 +78,7 @@ export function Badge({ kind, children }) {
 export function PendingText({ amount, className = '' }) {
   const n = Number(amount) || 0;
   if (n > 0) return <span className={`font-semibold text-red-600 ${className}`}>{money(n)}</span>;
-  if (n < 0) return <span className={`font-semibold text-emerald-700 ${className}`}>{money(-n)} adv</span>;
+  if (n < 0) return <span className={`font-semibold text-emerald-700 ${className}`}>{t('ui.advAmount', { amount: money(-n) })}</span>;
   return <span className={`text-slate-400 ${className}`}>₹0</span>;
 }
 
@@ -127,7 +124,7 @@ export function Stepper({ value, onChange, min = 0 }) {
   const n = Number(value) || 0;
   return (
     <div className="flex items-stretch gap-2">
-      <button type="button" className="btn-light w-14 text-2xl" onClick={() => onChange(Math.max(min, n - 1))} aria-label="Less">
+      <button type="button" className="btn-light w-14 text-2xl" onClick={() => onChange(Math.max(min, n - 1))} aria-label={t('common.less')}>
         −
       </button>
       <input
@@ -137,14 +134,14 @@ export function Stepper({ value, onChange, min = 0 }) {
         onChange={(e) => onChange(e.target.value.replace(/\D/g, ''))}
         onFocus={(e) => e.target.select()}
       />
-      <button type="button" className="btn-light w-14 text-2xl" onClick={() => onChange(n + 1)} aria-label="More">
+      <button type="button" className="btn-light w-14 text-2xl" onClick={() => onChange(n + 1)} aria-label={t('common.more')}>
         +
       </button>
     </div>
   );
 }
 
-export function Loader({ label = 'Loading…' }) {
+export function Loader({ label = t('common.loading') }) {
   return (
     <div className="flex items-center justify-center gap-3 py-10 text-slate-500">
       <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-brand-600" />
@@ -153,7 +150,7 @@ export function Loader({ label = 'Loading…' }) {
   );
 }
 
-export function Empty({ children = 'Nothing here yet.' }) {
+export function Empty({ children = t('common.empty') }) {
   return <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 p-6 text-center text-slate-500">{children}</div>;
 }
 
@@ -163,7 +160,7 @@ export function ErrorBox({ message, onRetry }) {
       <p>{message}</p>
       {onRetry && (
         <button className="btn-light btn-sm mt-3" onClick={onRetry}>
-          Try again
+          {t('common.tryAgain')}
         </button>
       )}
     </div>
@@ -196,7 +193,7 @@ export function Modal({ title, onClose, children }) {
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">{title}</h2>
-          <button className="grid h-9 w-9 place-items-center rounded-full text-xl text-slate-500 hover:bg-slate-100" onClick={onClose} aria-label="Close">
+          <button className="grid h-9 w-9 place-items-center rounded-full text-xl text-slate-500 hover:bg-slate-100" onClick={onClose} aria-label={t('common.close')}>
             ✕
           </button>
         </div>
@@ -210,9 +207,9 @@ export function Modal({ title, onClose, children }) {
 export function PrintHeader({ settings, title, subtitle }) {
   return (
     <div className="print-only mb-4 border-b pb-3">
-      <div className="text-lg font-bold">{settings?.business_name || 'Sai Water Suppliers'}</div>
+      <div className="text-lg font-bold">{lang === 'mr' ? settings?.business_name_mr || settings?.business_name || t('common.businessName') : settings?.business_name || t('common.businessName')}</div>
       <div className="text-sm text-slate-600">
-        {settings?.business_address || 'Kolewadi'}
+        {lang === 'mr' ? settings?.business_place_mr || settings?.business_address || t('common.businessPlace') : settings?.business_address || t('common.businessPlace')}
         {settings?.business_mobile ? ` · ${settings.business_mobile}` : ''}
       </div>
       <div className="mt-2 font-semibold">{title}</div>
@@ -226,7 +223,7 @@ export function DevCredit({ className = '' }) {
   return (
     <div className={`no-print flex flex-col items-center gap-0.5 text-center text-xs text-slate-400 ${className}`}>
       <span>
-        Developed by <span className="font-semibold text-slate-500">AB Technology Services</span>
+        {t('common.devBy')} <span className="font-semibold text-slate-500">AB Technology Services</span>
       </span>
       <a href="tel:7666287015" className="font-medium text-slate-500">
         📞 7666287015

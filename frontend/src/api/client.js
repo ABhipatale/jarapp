@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { lang, t } from '../i18n';
 
 const TOKEN_KEY = 'rws_token';
 
@@ -37,6 +38,8 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
+  // Server answers (validation / messages) in the app's language.
+  config.headers['X-Locale'] = lang;
   const token = tokenStore.get();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -61,7 +64,7 @@ api.interceptors.response.use(
   }
 );
 
-export const GENERIC_ERROR = 'Something went wrong. Please try again.';
+export const GENERIC_ERROR = t('err.generic');
 
 /** True when the request failed because we could not reach the server at all. */
 export function isNetworkError(err) {
@@ -70,7 +73,7 @@ export function isNetworkError(err) {
 
 /** Turn any API error into one short, human message. Never shows stack traces. */
 export function errorMessage(err) {
-  if (isNetworkError(err)) return 'No internet connection. Please try again.';
+  if (isNetworkError(err)) return t('err.network');
   const data = err?.response?.data;
   if (err?.response?.status === 422 && data) {
     if (data.errors) {

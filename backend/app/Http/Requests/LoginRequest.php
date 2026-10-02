@@ -16,8 +16,8 @@ class LoginRequest extends ApiRequest
     public function messages(): array
     {
         return [
-            'login.required' => 'Please enter email or mobile number.',
-            'password.required' => 'Please enter password.',
+            'login.required' => __('कृपया ईमेल किंवा मोबाईल नंबर टाका.'),
+            'password.required' => __('कृपया पासवर्ड टाका.'),
         ];
     }
 }

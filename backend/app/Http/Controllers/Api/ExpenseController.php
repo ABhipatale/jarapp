@@ -37,17 +37,17 @@ class ExpenseController extends Controller
     {
         $data = $request->validated();
         if (! empty($data['client_uuid']) && $existing = Expense::where('client_uuid', $data['client_uuid'])->first()) {
-            return response()->json(['message' => 'Expense saved successfully.', 'data' => $existing]);
+            return response()->json(['message' => __('खर्च यशस्वीरित्या जतन झाला.'), 'data' => $existing]);
         }
         $expense = Expense::create($data);
 
-        return response()->json(['message' => 'Expense saved successfully.', 'data' => $expense], 201);
+        return response()->json(['message' => __('खर्च यशस्वीरित्या जतन झाला.'), 'data' => $expense], 201);
     }
 
     public function destroy(Expense $expense)
     {
         $expense->delete();
 
-        return response()->json(['message' => 'Expense deleted.']);
+        return response()->json(['message' => __('खर्च हटवला.')]);
     }
 }

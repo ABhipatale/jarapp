@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import api, { errorMessage } from '../api/client';
 import { Field, Loader, PageHeader, Segmented } from '../components/ui';
 import { useUi } from '../context/UiContext';
+import { t } from '../i18n';
 
 export default function CustomerForm() {
   const { id } = useParams();
@@ -27,14 +28,14 @@ export default function CustomerForm() {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return setError('Please enter customer name.');
+    if (!form.name.trim()) return setError(t('cust.enterName'));
     const digits = form.mobile.replace(/\D/g, '').replace(/^(91|0)(?=\d{10}$)/, '');
-    if (!/^[6-9]\d{9}$/.test(digits)) return setError('Please enter a valid 10-digit mobile number.');
+    if (!/^[6-9]\d{9}$/.test(digits)) return setError(t('cust.enterMobile'));
     setBusy(true);
     setError('');
     try {
       const { data } = editing ? await api.put(`/customers/${id}`, form) : await api.post('/customers', form);
-      toast(data.message || 'Customer saved.');
+      toast(data.message || t('cust.saved'));
       navigate(`/customers/${data.data.id}`, { replace: true });
     } catch (err) {
       setError(errorMessage(err));
@@ -47,26 +48,26 @@ export default function CustomerForm() {
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <PageHeader title={editing ? 'Edit Customer' : 'Add Customer'} back />
+      <PageHeader title={editing ? t('cust.editTitle') : t('cust.add')} back />
       <div className="card space-y-4">
-        <Field label="Customer Name *">
+        <Field label={t('cust.name')}>
           <input className="input" value={form.name} onChange={set('name')} autoFocus={!editing} maxLength={120} />
         </Field>
-        <Field label="Mobile Number *" hint="10-digit number, used for WhatsApp messages">
+        <Field label={t('cust.mobile')} hint={t('cust.mobileHint')}>
           <input className="input" type="tel" inputMode="numeric" value={form.mobile} onChange={set('mobile')} maxLength={14} />
         </Field>
-        <Field label="Address">
+        <Field label={t('cust.address')}>
           <textarea className="input" rows={2} value={form.address} onChange={set('address')} maxLength={500} />
         </Field>
         {editing && (
-          <Field group label="Status">
+          <Field group label={t('cust.status')}>
             <Segmented
               size="sm"
               value={form.status}
               onChange={(v) => setForm({ ...form, status: v })}
               options={[
-                { value: 'active', label: 'Active', activeClass: 'bg-emerald-600 text-white ring-emerald-600' },
-                { value: 'inactive', label: 'Inactive', activeClass: 'bg-slate-600 text-white ring-slate-600' },
+                { value: 'active', label: t('cust.active'), activeClass: 'bg-emerald-600 text-white ring-emerald-600' },
+                { value: 'inactive', label: t('cust.inactive'), activeClass: 'bg-slate-600 text-white ring-slate-600' },
               ]}
             />
           </Field>
@@ -74,7 +75,7 @@ export default function CustomerForm() {
       </div>
       {error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       <button className="btn-primary w-full py-4 text-lg" disabled={busy}>
-        {busy ? 'Saving…' : editing ? 'Save Changes' : 'Add Customer'}
+        {busy ? t('common.saving') : editing ? t('cust.saveChanges') : t('cust.add')}
       </button>
     </form>
   );
