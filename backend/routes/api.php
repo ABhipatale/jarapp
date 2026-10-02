@@ -24,6 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('customers', CustomerController::class);
 
     Route::get('/jars', [JarController::class, 'index']);
+    Route::get('/jars/summary', [JarController::class, 'summary']);
     Route::post('/jars', [JarController::class, 'store']);
     Route::post('/jars/adjust', [JarController::class, 'adjust']);
     Route::put('/jars/{jar}', [JarController::class, 'update']);

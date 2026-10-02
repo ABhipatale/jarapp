@@ -35,6 +35,12 @@ class JarController extends Controller
         return response()->json(['summary' => $this->jars->summary(), 'jars' => $list]);
     }
 
+    /** Just the stock numbers (used by Daily Entry to show available jars). */
+    public function summary()
+    {
+        return response()->json($this->jars->summary());
+    }
+
     /** Add new jars to stock. */
     public function store(Request $request)
     {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { errorMessage } from '../api/client';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import api, { errorMessage } from '../api/client';
 import CustomerPicker from '../components/CustomerPicker';
 import { Field, PageHeader, Segmented, Stepper } from '../components/ui';
 import { useSettings } from '../context/SettingsContext';
@@ -12,7 +12,20 @@ import { messages, openWhatsApp } from '../lib/whatsapp';
 export default function DailyEntry() {
   const [params] = useSearchParams();
   const { settings } = useSettings();
-  const { toast } = useUi();
+  const { toast, alert } = useUi();
+  const navigate = useNavigate();
+
+  // Problems are shown in a small popup. Stock problems offer a shortcut to add jars.
+  const showProblem = async (message) => {
+    const stock = /available in the shop|No jars in stock/i.test(message);
+    const goAddJars = await alert({
+      title: stock ? 'Not enough jars' : 'Cannot save',
+      icon: stock ? '💧' : '⚠️',
+      message,
+      actionText: stock ? 'Add Jars' : undefined,
+    });
+    if (goAddJars) navigate('/jars');
+  };
 
   const [date, setDate] = useState(today());
   const [customerId, setCustomerId] = useState(params.get('customer') || '');
@@ -26,8 +39,16 @@ export default function DailyEntry() {
   const [notes, setNotes] = useState('');
   const [clientUuid, setClientUuid] = useState(uuid);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
   const [result, setResult] = useState(null);
+  // Jars currently in the shop (null = unknown, e.g. offline). The server checks again on save.
+  const [available, setAvailable] = useState(null);
+
+  const loadStock = () =>
+    api.get('/jars/summary').then((r) => setAvailable(r.data.available_jars)).catch(() => {});
+
+  useEffect(() => {
+    loadStock();
+  }, []);
 
   // Quick-action links (?type=…) switch the type even when already on this screen.
   useEffect(() => {
@@ -50,16 +71,17 @@ export default function DailyEntry() {
   const problem = useMemo(() => {
     if (!customerId) return 'Please select a customer.';
     if (q < 1) return 'Jar quantity must be at least 1.';
+    if (type === 'given' && available !== null && q > available)
+      return available <= 0 ? 'No jars available in the shop. All jars are with customers or damaged/lost.' : `Only ${available} jars available in the shop. Cannot give ${q}.`;
     if (type === 'returned' && q > jarsNow) return jarsNow === 0 ? 'This customer has no jars to return.' : `Customer has only ${jarsNow} jars. Cannot return ${q}.`;
     if (type === 'given' && num(paidInput) > amount && payType === 'udhari') return 'Paid amount cannot be more than the bill amount. Enter the extra as Advance.';
     return '';
-  }, [customerId, q, type, jarsNow, paidInput, amount, payType]);
+  }, [customerId, q, type, jarsNow, available, paidInput, amount, payType]);
 
   const save = async (e) => {
     e.preventDefault();
-    if (problem) return setError(problem);
+    if (problem) return showProblem(problem);
     setBusy(true);
-    setError('');
     const body = {
       client_uuid: clientUuid,
       customer_id: Number(customerId),
@@ -78,9 +100,10 @@ export default function DailyEntry() {
         toast(res.data.message || 'Jar entry saved successfully.');
         setResult({ ...res.data.data, customer_name: customer?.name, customer_mobile: customer?.mobile });
         setCustomer((c) => c && { ...c, current_jars: res.data.data.current_jars, pending_amount: res.data.data.pending_amount });
+        loadStock();
       }
     } catch (err) {
-      setError(errorMessage(err));
+      showProblem(errorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -141,6 +164,17 @@ export default function DailyEntry() {
             Current jars: <b>{jarsNow}</b> → after this entry: <b>{jarsAfter}</b>
           </p>
         )}
+        {type === 'given' && available !== null && (
+          <p className={`rounded-xl px-3 py-2 text-sm ${q > available ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-800'}`}>
+            💧 Available in shop: <b>{available}</b> jars
+            {q > available && (
+              <>
+                {' '}
+                — <Link to="/jars" className="font-semibold underline">add jars</Link>
+              </>
+            )}
+          </p>
+        )}
       </div>
 
       {type === 'given' && (
@@ -194,7 +228,6 @@ export default function DailyEntry() {
         </Field>
       </div>
 
-      {error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
       <div className="no-print sticky-above-nav sticky z-20">
         <button className={`${type === 'given' ? 'btn-primary' : 'btn bg-sky-600 text-white'} w-full py-4 text-lg shadow-lg`} disabled={busy}>

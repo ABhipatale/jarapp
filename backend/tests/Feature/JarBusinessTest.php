@@ -89,6 +89,42 @@ class JarBusinessTest extends TestCase
             ->assertStatus(422)->assertJsonPath('message', 'Customer has only 3 jars. Cannot return 4.');
     }
 
+    public function test_cannot_give_more_jars_than_available_in_shop(): void
+    {
+        // 50 jars in stock (setUp). Give 45 → 5 left.
+        $this->entry(['transaction_type' => 'given', 'jar_quantity' => 45, 'rate' => 30])->assertCreated();
+
+        $this->entry(['transaction_type' => 'given', 'jar_quantity' => 6, 'rate' => 30])
+            ->assertStatus(422)->assertJsonPath('message', 'Only 5 jars available in the shop. Cannot give 6.');
+        $this->entry(['transaction_type' => 'given', 'jar_quantity' => 5, 'rate' => 30])->assertCreated();
+
+        $this->entry(['transaction_type' => 'given', 'jar_quantity' => 1, 'rate' => 30])
+            ->assertStatus(422)->assertJsonPath('message', 'No jars available in the shop. All jars are with customers or damaged/lost.');
+
+        // A return frees a jar again.
+        $this->entry(['transaction_type' => 'returned', 'jar_quantity' => 1])->assertCreated();
+        $this->entry(['transaction_type' => 'given', 'jar_quantity' => 1, 'rate' => 30])->assertCreated();
+
+        $this->getJson('/api/jars/summary')->assertOk()->assertJsonPath('available_jars', 0);
+    }
+
+    public function test_cannot_give_jars_before_any_stock_is_added(): void
+    {
+        $this->putJson('/api/settings', ['total_jars' => 0])->assertOk();
+
+        $this->entry(['transaction_type' => 'given', 'jar_quantity' => 1, 'rate' => 30])
+            ->assertStatus(422)->assertJsonPath('message', 'No jars in stock yet. Add your jars first in the Jars screen.');
+    }
+
+    public function test_cannot_delete_a_return_if_shop_has_no_jars_left_for_it(): void
+    {
+        $this->entry(['transaction_type' => 'given', 'jar_quantity' => 10, 'rate' => 30]);
+        $ret = $this->entry(['transaction_type' => 'returned', 'jar_quantity' => 10])->json('data.id');
+        $this->entry(['transaction_type' => 'given', 'jar_quantity' => 50, 'rate' => 30])->assertCreated(); // shop now empty
+
+        $this->deleteJson("/api/jar-transactions/{$ret}")->assertStatus(422);
+    }
+
     public function test_rejects_negative_and_invalid_values(): void
     {
         $this->entry(['transaction_type' => 'given', 'jar_quantity' => -2, 'rate' => 30])->assertStatus(422);

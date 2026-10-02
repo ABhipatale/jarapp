@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Customer;
+use App\Models\Jar;
 use App\Models\JarTransaction;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +14,7 @@ class JarTransactionService
     public function __construct(
         private BalanceService $balances,
         private LedgerService $ledger,
+        private JarService $jars,
     ) {}
 
     /**
@@ -52,6 +54,20 @@ class JarTransactionService
                     }
                     $row += ['payment_type' => 'cash', 'rate' => 0, 'amount' => 0, 'paid_amount' => 0, 'udhari_amount' => 0, 'advance_amount' => 0];
                 } else {
+                    // Can't give more jars than are in the shop. Locking the jar rows makes two
+                    // simultaneous "give" entries (for different customers) wait for each other.
+                    Jar::query()->lockForUpdate()->pluck('id');
+                    $available = $this->jars->summary()['available_jars'];
+                    if ($qty > $available) {
+                        throw ValidationException::withMessages([
+                            'jar_quantity' => match (true) {
+                                Jar::count() === 0 => 'No jars in stock yet. Add your jars first in the Jars screen.',
+                                $available <= 0 => 'No jars available in the shop. All jars are with customers or damaged/lost.',
+                                default => "Only {$available} jars available in the shop. Cannot give {$qty}.",
+                            },
+                        ]);
+                    }
+
                     $rate = round((float) ($data['rate'] ?? 0), 2);
                     $amount = round($qty * $rate, 2);
                     $paymentType = $data['payment_type'] ?? 'cash';
@@ -95,6 +111,17 @@ class JarTransactionService
     {
         DB::transaction(function () use ($tx) {
             Customer::withTrashed()->whereKey($tx->customer_id)->lockForUpdate()->first();
+
+            if ($tx->transaction_type === JarTransaction::RETURNED) {
+                // Undoing a return puts the jars back with the customer — they must exist in the shop.
+                Jar::query()->lockForUpdate()->pluck('id');
+                $available = $this->jars->summary()['available_jars'];
+                if ($tx->jar_quantity > $available) {
+                    throw ValidationException::withMessages([
+                        'transaction' => "Cannot delete: only {$available} jars are in the shop, this return was {$tx->jar_quantity}.",
+                    ]);
+                }
+            }
 
             if ($tx->transaction_type === JarTransaction::GIVEN) {
                 $jars = $this->balances->forCustomer($tx->customer_id)['current_jars'];
