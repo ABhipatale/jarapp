@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
 import { useUi } from '../context/UiContext';
 import { LANGS, lang, setLang, t } from '../i18n';
-import { DEFAULT_TEMPLATES } from '../lib/whatsapp';
+import { DEFAULT_TEMPLATES, getWaApp, setWaApp } from '../lib/whatsapp';
 
 const TEMPLATES = [
   ['wa_delivery', t('set.tplDelivery'), '{customer_name} {date} {jar_quantity} {rate} {amount} {paid} {udhari} {current_jars}'],
@@ -22,6 +22,7 @@ export default function Settings() {
   const [form, setForm] = useState(null);
   const [busy, setBusy] = useState(false);
   const [pw, setPw] = useState({ current_password: '', password: '', password_confirmation: '' });
+  const [waApp, setWaAppState] = useState(getWaApp);
 
   useEffect(() => {
     api.get('/settings').then(({ data }) => {
@@ -69,6 +70,24 @@ export default function Settings() {
         <h2 className="font-semibold">{t('set.language')}</h2>
         <Segmented value={lang} onChange={(v) => v !== lang && setLang(v)} options={Object.entries(LANGS).map(([value, label]) => ({ value, label }))} />
         <p className="text-sm text-slate-500">{t('set.languageHint')}</p>
+      </section>
+
+      <section className="card space-y-3">
+        <h2 className="font-semibold">{t('set.waApp')}</h2>
+        <Segmented
+          size="sm"
+          value={waApp}
+          onChange={(v) => {
+            setWaApp(v);
+            setWaAppState(v);
+            toast(t('set.waAppSaved'));
+          }}
+          options={[
+            { value: 'business', label: t('set.waAppBusiness'), activeClass: 'bg-[#25D366] text-white ring-[#25D366]' },
+            { value: 'normal', label: t('set.waAppNormal'), activeClass: 'bg-[#25D366] text-white ring-[#25D366]' },
+          ]}
+        />
+        <p className="text-sm text-slate-500">{t('set.waAppHint')}</p>
       </section>
 
       <form onSubmit={save} className="space-y-4">

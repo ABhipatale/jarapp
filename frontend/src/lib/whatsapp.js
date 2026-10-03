@@ -101,11 +101,49 @@ export function waNumber(mobile) {
   return digits;
 }
 
-/** Open WhatsApp click-to-chat. With no mobile, WhatsApp asks whom to send to. */
+// Which WhatsApp app this phone should use: 'business' (WhatsApp Business first, normal
+// WhatsApp if Business isn't installed) or 'normal'. Saved per phone, like the language.
+const WA_APP_KEY = 'rws_wa_app';
+const ANDROID_PACKAGES = { business: 'com.whatsapp.w4b', normal: 'com.whatsapp' };
+
+export function getWaApp() {
+  try {
+    return localStorage.getItem(WA_APP_KEY) === 'normal' ? 'normal' : 'business';
+  } catch {
+    return 'business';
+  }
+}
+
+export function setWaApp(app) {
+  try {
+    localStorage.setItem(WA_APP_KEY, app === 'normal' ? 'normal' : 'business');
+  } catch {
+    /* storage blocked: default (business) is used */
+  }
+}
+
+/**
+ * Open WhatsApp with a ready message. With no mobile, WhatsApp asks whom to send to.
+ *
+ * Android: an intent link names the exact app (WhatsApp Business or normal WhatsApp).
+ * If that app isn't installed, Chrome follows the fallback wa.me link, which opens
+ * whichever WhatsApp the phone has. iPhone/computer: wa.me only — the system decides
+ * the app there, a web page cannot choose.
+ */
 export function openWhatsApp(mobile, text) {
   const n = mobile ? waNumber(mobile) : '';
-  const url = `https://wa.me/${n}?text=${encodeURIComponent(text)}`;
-  window.open(url, '_blank', 'noopener');
+  const waMe = `https://wa.me/${n}?text=${encodeURIComponent(text)}`;
+
+  if (/Android/i.test(navigator.userAgent)) {
+    const query = (n ? `phone=${n}&` : '') + `text=${encodeURIComponent(text)}`;
+    const intent =
+      `intent://send?${query}#Intent;scheme=whatsapp;package=${ANDROID_PACKAGES[getWaApp()]};` +
+      `S.browser_fallback_url=${encodeURIComponent(waMe)};end`;
+    window.location.href = intent;
+    return;
+  }
+
+  window.open(waMe, '_blank', 'noopener');
 }
 
 export const messages = {
