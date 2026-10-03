@@ -41,6 +41,9 @@ export default function DailyEntry() {
   const [clientUuid, setClientUuid] = useState(uuid);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
+  // GIVE only: empty jars the customer hands back at the same delivery (optional).
+  const [takeBack, setTakeBack] = useState(false);
+  const [retQty, setRetQty] = useState('');
   // Jars currently in the shop (null = unknown, e.g. offline). The server checks again on save.
   const [available, setAvailable] = useState(null);
 
@@ -67,17 +70,26 @@ export default function DailyEntry() {
   const paid = payType === 'cash' ? amount : Math.min(round2(num(paidInput)), amount);
   const udhari = round2(amount - paid);
   const jarsNow = customer?.current_jars ?? 0;
-  const jarsAfter = type === 'given' ? jarsNow + q : jarsNow - q;
+  const r = type === 'given' && takeBack ? parseInt(retQty, 10) || 0 : 0;
+  // Empties come back before the full jars go out, so they also free up shop stock.
+  const stockForGive = available === null ? null : available + r;
+  const jarsAfter = type === 'given' ? jarsNow - r + q : jarsNow - q;
+
+  const openTakeBack = () => {
+    setTakeBack(true);
+    setRetQty(String(Math.min(q, jarsNow)));
+  };
 
   const problem = useMemo(() => {
     if (!customerId) return t('entry.selectCustomer');
     if (q < 1) return t('entry.qtyMin');
-    if (type === 'given' && available !== null && q > available)
-      return available <= 0 ? t('entry.noneAvailable') : t('entry.onlyAvailable', { n: available, q });
+    if (type === 'given' && r > jarsNow) return jarsNow === 0 ? t('entry.noJarsToReturn') : t('entry.onlyWithCustomer', { n: jarsNow, q: r });
+    if (type === 'given' && stockForGive !== null && q > stockForGive)
+      return stockForGive <= 0 ? t('entry.noneAvailable') : t('entry.onlyAvailable', { n: stockForGive, q });
     if (type === 'returned' && q > jarsNow) return jarsNow === 0 ? t('entry.noJarsToReturn') : t('entry.onlyWithCustomer', { n: jarsNow, q });
     if (type === 'given' && num(paidInput) > amount && payType === 'udhari') return t('entry.paidTooMuch');
     return '';
-  }, [customerId, q, type, jarsNow, available, paidInput, amount, payType]);
+  }, [customerId, q, r, type, jarsNow, stockForGive, paidInput, amount, payType]);
 
   const save = async (e) => {
     e.preventDefault();
@@ -90,13 +102,14 @@ export default function DailyEntry() {
       transaction_type: type,
       jar_quantity: q,
       notes: notes || null,
-      ...(type === 'given' && { rate: num(rate), payment_type: payType, paid_amount: paid, advance_amount: num(advance) }),
+      ...(type === 'given' && { rate: num(rate), payment_type: payType, paid_amount: paid, advance_amount: num(advance), return_quantity: r }),
     };
     try {
-      const res = await submit('/jar-transactions', body, t(type === 'given' ? 'entry.outboxGive' : 'entry.outboxReturn', { q, name: customer?.name }));
+      const label = r > 0 ? t('entry.outboxGiveReturn', { q, r, name: customer?.name }) : t(type === 'given' ? 'entry.outboxGive' : 'entry.outboxReturn', { q, name: customer?.name });
+      const res = await submit('/jar-transactions', body, label);
       if (res.queued) {
         toast(t('entry.queuedToast'), 'info');
-        setResult({ queued: true, customer_name: customer?.name, transaction_type: type, jar_quantity: q });
+        setResult({ queued: true, customer_name: customer?.name, transaction_type: type, jar_quantity: q, returned_quantity: r });
       } else {
         toast(res.data.message || t('entry.savedOk'));
         setResult({ ...res.data.data, customer_name: customer?.name, customer_mobile: customer?.mobile });
@@ -117,6 +130,8 @@ export default function DailyEntry() {
     setAdvance('');
     setNotes('');
     setPayType('cash');
+    setTakeBack(false);
+    setRetQty('');
     setClientUuid(uuid());
     if (!keepCustomer) {
       setCustomerId('');
@@ -158,17 +173,38 @@ export default function DailyEntry() {
           </Field>
         )}
         <Field group label={type === 'given' ? t('entry.howManyGiven') : t('entry.howManyReturned')}>
-          <Stepper value={qty} onChange={(v) => setQty(String(v))} min={1} />
+          <Stepper value={qty} onChange={(v) => setQty(String(v))} min={1} max={type === 'returned' && customer && jarsNow > 0 ? jarsNow : undefined} />
         </Field>
+        {type === 'given' && customer && jarsNow > 0 && !takeBack && (
+          <button type="button" onClick={openTakeBack} className="w-full rounded-xl border-2 border-dashed border-sky-300 bg-sky-50 px-3 py-2.5 text-left text-sm font-semibold text-sky-800 active:bg-sky-100">
+            {t('entry.takeBackBtn')} <span className="font-normal text-sky-700">· {t('entry.takeBackHint', { n: jarsNow })}</span>
+          </button>
+        )}
+        {type === 'given' && takeBack && (
+          <div className="space-y-2 rounded-2xl bg-sky-50 p-3 ring-1 ring-sky-200">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-sky-900">{t('entry.takeBackLabel')}</span>
+              <button type="button" className="text-sm font-semibold text-slate-500 underline" onClick={() => { setTakeBack(false); setRetQty(''); }}>
+                {t('entry.takeBackRemove')}
+              </button>
+            </div>
+            <Stepper value={retQty} onChange={(v) => setRetQty(String(v))} min={0} max={jarsNow} />
+            <div className="flex flex-wrap gap-2">
+              <button type="button" className="chip" onClick={() => setRetQty(String(Math.min(q, jarsNow)))}>{t('entry.takeBackSame', { n: Math.min(q, jarsNow) })}</button>
+              <button type="button" className="chip" onClick={() => setRetQty(String(jarsNow))}>{t('entry.takeBackAll', { n: jarsNow })}</button>
+            </div>
+            <p className="text-xs text-sky-800">{t('entry.takeBackHint', { n: jarsNow })}</p>
+          </div>
+        )}
         {customer && (
           <p className={`rounded-xl px-3 py-2 text-sm ${jarsAfter < 0 ? 'bg-red-50 text-red-700' : 'bg-slate-50 text-slate-700'}`}>
             {t('entry.currentJars')} <b>{jarsNow}</b> → {t('entry.afterEntry')} <b>{jarsAfter}</b>
           </p>
         )}
-        {type === 'given' && available !== null && (
-          <p className={`rounded-xl px-3 py-2 text-sm ${q > available ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-800'}`}>
-            {t('entry.availableInShop')} <b>{available}</b> {t('entry.jarsWord')}
-            {q > available && (
+        {type === 'given' && stockForGive !== null && (
+          <p className={`rounded-xl px-3 py-2 text-sm ${q > stockForGive ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-800'}`}>
+            {t('entry.availableInShop')} <b>{stockForGive}</b> {t('entry.jarsWord')}
+            {q > stockForGive && (
               <>
                 {' '}
                 — <Link to="/jars" className="font-semibold underline">{t('entry.addJars')}</Link>
@@ -232,7 +268,7 @@ export default function DailyEntry() {
 
       <div className="no-print sticky-above-nav sticky z-20">
         <button className={`${type === 'given' ? 'btn-primary' : 'btn bg-sky-600 text-white'} w-full py-4 text-lg shadow-lg`} disabled={busy}>
-          {busy ? t('entry.saving') : t(type === 'given' ? 'entry.saveGive' : 'entry.saveReturn', { q })}
+          {busy ? t('entry.saving') : r > 0 ? t('entry.saveGiveReturn', { q, r }) : t(type === 'given' ? 'entry.saveGive' : 'entry.saveReturn', { q })}
         </button>
       </div>
     </form>
@@ -257,6 +293,7 @@ function SavedCard({ result, settings, onNew }) {
         <div className="mt-4 space-y-1.5 rounded-2xl bg-slate-50 p-4 text-left">
           <Row label={t('entry.customer')} value={result.customer_name} />
           <Row label={isGive ? t('entry.given') : t('entry.returned')} value={t('entry.jarsN', { n: result.jar_quantity })} />
+          {isGive && result.returned_quantity > 0 && <Row label={t('entry.takenBack')} value={t('entry.jarsN', { n: result.returned_quantity })} />}
           {!result.queued && (
             <>
               {isGive && (

@@ -42,7 +42,7 @@ class JarTransactionController extends Controller
 
     public function store(JarTransactionRequest $request)
     {
-        [$tx, $created, $balance] = $this->service->create($request->validated(), $request->user()?->id);
+        [$tx, $created, $balance, $returned] = $this->service->create($request->validated(), $request->user()?->id);
         $tx->load('customer:id,name,mobile');
 
         return response()->json([
@@ -51,6 +51,7 @@ class JarTransactionController extends Controller
             'data' => $this->present($tx) + [
                 'current_jars' => $balance['current_jars'],
                 'pending_amount' => $balance['pending'],
+                'returned_quantity' => $returned,
             ],
         ], $created ? 201 : 200);
     }

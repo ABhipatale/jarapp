@@ -120,8 +120,11 @@ export function Segmented({ value, onChange, options, size = 'lg' }) {
   );
 }
 
-export function Stepper({ value, onChange, min = 0 }) {
+/** Number box with −/+ buttons. `max` (optional) caps both the + button and typed values. */
+export function Stepper({ value, onChange, min = 0, max }) {
   const n = Number(value) || 0;
+  const hasMax = max !== undefined && max !== null;
+  const atMax = hasMax && n >= max;
   return (
     <div className="flex items-stretch gap-2">
       <button type="button" className="btn-light w-14 text-2xl" onClick={() => onChange(Math.max(min, n - 1))} aria-label={t('common.less')}>
@@ -131,10 +134,13 @@ export function Stepper({ value, onChange, min = 0 }) {
         className="input text-center text-2xl font-bold tabular-nums"
         inputMode="numeric"
         value={value}
-        onChange={(e) => onChange(e.target.value.replace(/\D/g, ''))}
+        onChange={(e) => {
+          const digits = e.target.value.replace(/\D/g, '');
+          onChange(hasMax && digits !== '' && Number(digits) > max ? String(max) : digits);
+        }}
         onFocus={(e) => e.target.select()}
       />
-      <button type="button" className="btn-light w-14 text-2xl" onClick={() => onChange(n + 1)} aria-label={t('common.more')}>
+      <button type="button" className="btn-light w-14 text-2xl disabled:opacity-40" disabled={atMax} onClick={() => onChange(hasMax ? Math.min(max, n + 1) : n + 1)} aria-label={t('common.more')}>
         +
       </button>
     </div>

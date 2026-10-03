@@ -19,12 +19,16 @@ class JarTransactionService
 
     /**
      * Save a GIVE / RETURN entry. All money is recalculated here; the app's numbers
-     * are only a preview. Returns [transaction, created(bool), balance-after].
+     * are only a preview. Returns [transaction, created(bool), balance-after, returned-qty].
+     *
+     * A GIVE entry may also carry return_quantity: empty jars the customer handed back at
+     * the same delivery. That is saved as a separate RETURN row in the same DB transaction,
+     * before the GIVE, so the empties are back in the shop when the stock check runs.
      */
     public function create(array $data, ?int $userId): array
     {
         if (! empty($data['client_uuid']) && $existing = JarTransaction::where('client_uuid', $data['client_uuid'])->first()) {
-            return [$existing, false, $this->balances->forCustomer($existing->customer_id)];
+            return [$existing, false, $this->balances->forCustomer($existing->customer_id), 0];
         }
 
         try {
@@ -54,6 +58,26 @@ class JarTransactionService
                     }
                     $row += ['payment_type' => 'cash', 'rate' => 0, 'amount' => 0, 'paid_amount' => 0, 'udhari_amount' => 0, 'advance_amount' => 0];
                 } else {
+                    $returnQty = (int) ($data['return_quantity'] ?? 0);
+                    if ($returnQty > 0) {
+                        if ($returnQty > $before['current_jars']) {
+                            throw ValidationException::withMessages([
+                                'return_quantity' => $before['current_jars'] === 0
+                                    ? __('या ग्राहकाकडे परत करण्यासाठी जार नाहीत.')
+                                    : __('ग्राहकाकडे फक्त :jars जार आहेत. :qty जार परत घेता येणार नाहीत.', ['jars' => $before['current_jars'], 'qty' => $returnQty]),
+                            ]);
+                        }
+                        JarTransaction::create([
+                            'customer_id' => $data['customer_id'],
+                            'transaction_date' => $data['transaction_date'],
+                            'transaction_type' => JarTransaction::RETURNED,
+                            'jar_quantity' => $returnQty,
+                            'payment_type' => 'cash', 'rate' => 0, 'amount' => 0, 'paid_amount' => 0, 'udhari_amount' => 0, 'advance_amount' => 0,
+                            'notes' => $data['notes'] ?? null,
+                            'created_by' => $userId,
+                        ]);
+                    }
+
                     // Can't give more jars than are in the shop. Locking the jar rows makes two
                     // simultaneous "give" entries (for different customers) wait for each other.
                     Jar::query()->lockForUpdate()->pluck('id');
@@ -94,7 +118,7 @@ class JarTransactionService
                 $tx = JarTransaction::create($row);
                 $this->ledger->rebuild($tx->customer_id);
 
-                return [$tx, true, $this->balances->forCustomer($tx->customer_id)];
+                return [$tx, true, $this->balances->forCustomer($tx->customer_id), $returnQty ?? 0];
             });
         } catch (UniqueConstraintViolationException $e) {
             // Same client_uuid arrived twice at the same moment (offline sync retry).
@@ -103,7 +127,7 @@ class JarTransactionService
                 throw $e;
             }
 
-            return [$existing, false, $this->balances->forCustomer($existing->customer_id)];
+            return [$existing, false, $this->balances->forCustomer($existing->customer_id), 0];
         }
     }
 

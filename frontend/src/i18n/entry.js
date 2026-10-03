@@ -1,6 +1,15 @@
 // Daily entry, payments, jar entries, jars, expenses and settings screens.
 export default {
   mr: {
+    'entry.takeBackBtn': '↩ रिकामे जार परत घेतले?',
+    'entry.takeBackLabel': 'परत घेतलेले रिकामे जार',
+    'entry.takeBackSame': 'दिलेल्या इतकेच ({n})',
+    'entry.takeBackAll': 'सर्व ({n})',
+    'entry.takeBackRemove': 'परत घेतले नाहीत',
+    'entry.takeBackHint': 'ग्राहकाकडे सध्या {n} जार आहेत',
+    'entry.saveGiveReturn': 'जतन करा – {q} जार द्या, {r} परत घ्या',
+    'entry.takenBack': 'परत घेतले',
+    'entry.outboxGiveReturn': '{q} जार दिले, {r} परत घेतले – {name}',
     // Shared by these screens
     'entry.saving': 'जतन होत आहे…',
     'entry.save': 'जतन करा',
@@ -213,6 +222,15 @@ export default {
     'set.logout': '🚪 बाहेर पडा',
   },
   en: {
+    'entry.takeBackBtn': '↩ Took back empty jars?',
+    'entry.takeBackLabel': 'Empty jars taken back',
+    'entry.takeBackSame': 'Same as given ({n})',
+    'entry.takeBackAll': 'All ({n})',
+    'entry.takeBackRemove': 'None taken back',
+    'entry.takeBackHint': 'Customer holds {n} jars now',
+    'entry.saveGiveReturn': 'Save – Give {q}, take back {r}',
+    'entry.takenBack': 'Taken back',
+    'entry.outboxGiveReturn': 'Gave {q}, took back {r} – {name}',
     // Shared by these screens
     'entry.saving': 'Saving…',
     'entry.save': 'Save',

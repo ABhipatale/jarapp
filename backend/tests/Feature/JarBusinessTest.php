@@ -108,6 +108,50 @@ class JarBusinessTest extends TestCase
         $this->getJson('/api/jars/summary')->assertOk()->assertJsonPath('available_jars', 0);
     }
 
+    public function test_give_with_empties_taken_back_in_one_save(): void
+    {
+        $this->entry(['transaction_type' => 'given', 'jar_quantity' => 5, 'rate' => 30]); // holds 5
+
+        // Next delivery: 4 full jars given, 3 empties taken back.
+        $this->entry(['transaction_type' => 'given', 'jar_quantity' => 4, 'rate' => 30, 'return_quantity' => 3])
+            ->assertCreated()
+            ->assertJsonPath('data.jar_quantity', 4)
+            ->assertJsonPath('data.returned_quantity', 3)
+            ->assertJsonPath('data.amount', 120)
+            ->assertJsonPath('data.current_jars', 6); // 5 - 3 + 4
+
+        $rows = $this->getJson("/api/customers/{$this->rahul->id}/ledger")->json('rows');
+        $this->assertSame(['given', 'returned', 'given'], array_column($rows, 'entry_type'));
+
+        $d = $this->getJson('/api/dashboard')->json('period');
+        $this->assertSame(9, $d['given']);
+        $this->assertSame(3, $d['returned']);
+    }
+
+    public function test_empties_taken_back_cannot_exceed_jars_held_and_nothing_is_saved(): void
+    {
+        $this->entry(['transaction_type' => 'given', 'jar_quantity' => 2, 'rate' => 30]);
+
+        $this->entry(['transaction_type' => 'given', 'jar_quantity' => 3, 'rate' => 30, 'return_quantity' => 5])
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'ग्राहकाकडे फक्त 2 जार आहेत. 5 जार परत घेता येणार नाहीत.');
+
+        // Both parts rolled back.
+        $this->getJson("/api/customers/{$this->rahul->id}")->assertJsonPath('data.current_jars', 2);
+    }
+
+    public function test_empties_taken_back_free_up_stock_for_the_same_delivery(): void
+    {
+        $this->entry(['transaction_type' => 'given', 'jar_quantity' => 50, 'rate' => 30]); // shop now empty
+
+        // Swap 5 full for 5 empties: allowed, because the empties come back first.
+        $this->entry(['transaction_type' => 'given', 'jar_quantity' => 5, 'rate' => 30, 'return_quantity' => 5])
+            ->assertCreated()->assertJsonPath('data.current_jars', 50);
+
+        // Without returns there is still no stock.
+        $this->entry(['transaction_type' => 'given', 'jar_quantity' => 1, 'rate' => 30])->assertStatus(422);
+    }
+
     public function test_cannot_give_jars_before_any_stock_is_added(): void
     {
         $this->putJson('/api/settings', ['total_jars' => 0])->assertOk();

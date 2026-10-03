@@ -21,7 +21,7 @@ export const DEFAULT_TEMPLATES = {
   wa_delivery: `🙏 *नमस्कार {customer_name}*,
 
 💧 आज दिनांक *{date}* रोजी आपल्याला *{jar_quantity} पाण्याचे जार* देण्यात आले आहेत.
-
+{return_line}
 🧾 *बिल तपशील*
 ${LINE}
 ▫️ जार दर : ₹{rate}
@@ -172,6 +172,7 @@ export const messages = {
       paid: amt(Number(t.paid_amount) + Number(t.advance_amount || 0)),
       udhari: amt(t.udhari_amount),
       current_jars: t.current_jars,
+      return_line: t.returned_quantity > 0 ? `↩️ आपल्याकडून *${t.returned_quantity} रिकामे जार* परत घेतले.\n` : '',
     });
   },
   returned(settings, t) {
