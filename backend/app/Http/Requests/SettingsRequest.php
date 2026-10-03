@@ -19,6 +19,8 @@ class SettingsRequest extends ApiRequest
             'business_address' => ['sometimes', 'nullable', 'string', 'max:300'],
             'business_place_mr' => ['sometimes', 'nullable', 'string', 'max:120'],
             'business_mobile' => ['sometimes', 'nullable', 'regex:/^[6-9][0-9]{9}$/'],
+            'owner_name_mr' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'contact_numbers' => ['sometimes', 'nullable', 'string', 'max:200'],
             'default_rate' => ['sometimes', 'numeric', 'min:0', 'max:100000'],
             'jar_tracking' => ['sometimes', 'boolean'],
             'total_jars' => ['sometimes', 'integer', 'min:0', 'max:100000'],

@@ -110,6 +110,12 @@ export default function Settings() {
           <Field label={t('set.businessMobile')}>
             <input className="input" type="tel" value={form.business_mobile || ''} onChange={set('business_mobile')} />
           </Field>
+          <Field label={t('set.ownerName')} hint={t('set.contactHint')}>
+            <input className="input" value={form.owner_name_mr || ''} onChange={set('owner_name_mr')} maxLength={120} />
+          </Field>
+          <Field label={t('set.contactNumbers')} hint={t('set.contactNumbersHint')}>
+            <input className="input" value={form.contact_numbers || ''} onChange={set('contact_numbers')} maxLength={200} />
+          </Field>
         </section>
 
         <section className="card space-y-3">

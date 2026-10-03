@@ -1,74 +1,78 @@
 import { fmtDate, today } from './format';
 
-// Default templates. The shop can edit these in Settings; {shop_name} and
-// {shop_place} come from the Marathi business name/place in Settings.
+// Default WhatsApp templates (customer-facing, always Marathi). The shop can edit them in
+// Settings. WhatsApp formatting: *bold*, _italic_. {footer} is the shared closing block
+// (thanks, home-delivery line, shop name, contact numbers, owner) — it is added at the end
+// automatically if a custom template leaves it out.
+const LINE = '━━━━━━━━━━━━━━';
+
+export const DEFAULT_FOOTER = `${LINE}
+धन्यवाद 🙏
+🚚 _आपल्या आवश्यकतेनुसार आपणास घरपोच जार सेवा दिली जाईल._
+
+💧 *{shop_name}*, {shop_place}
+✨ शुद्ध पाणी... निरोगी जीवन...!
+
+📞 *संपर्क*
+{contact_lines}
+👤 {owner_name}`;
+
 export const DEFAULT_TEMPLATES = {
-  wa_delivery: `नमस्कार {customer_name},
+  wa_delivery: `🙏 *नमस्कार {customer_name}*,
 
-आज दिनांक {date} रोजी आपल्याला {jar_quantity} पाण्याचे जार देण्यात आले आहेत.
+💧 आज दिनांक *{date}* रोजी आपल्याला *{jar_quantity} पाण्याचे जार* देण्यात आले आहेत.
 
-जार दर: ₹{rate}
-एकूण रक्कम: ₹{amount}
-भरलेली रक्कम: ₹{paid}
-उधारी: ₹{udhari}
+🧾 *बिल तपशील*
+${LINE}
+▫️ जार दर : ₹{rate}
+▫️ एकूण रक्कम : *₹{amount}*
+✅ भरलेली रक्कम : ₹{paid}
+📒 उधारी : ₹{udhari}
+${LINE}
 
-सध्या आपल्याकडे एकूण {current_jars} जार आहेत.
+💧 सध्या आपल्याकडे एकूण *{current_jars} जार* आहेत.
 
-धन्यवाद.
+{footer}`,
+  wa_return: `🙏 *नमस्कार {customer_name}*,
 
-{shop_name}
-{shop_place}`,
-  wa_return: `नमस्कार {customer_name},
+↩️ आज दिनांक *{date}* रोजी *{returned_jars} पाण्याचे जार* परत मिळाले.
 
-आज दिनांक {date} रोजी {returned_jars} पाण्याचे जार परत मिळाले.
+💧 सध्या आपल्याकडे एकूण *{current_jars} जार* आहेत.
 
-सध्या आपल्याकडे एकूण {current_jars} जार आहेत.
+{footer}`,
+  wa_payment: `🙏 *नमस्कार {customer_name}*,
 
-धन्यवाद.
+✅ आपले *₹{paid_amount}* पेमेंट आज दिनांक *{date}* रोजी प्राप्त झाले आहे.
 
-{shop_name}
-{shop_place}`,
-  wa_payment: `नमस्कार {customer_name},
+🧾 *पेमेंट पावती*
+${LINE}
+▫️ मागील बाकी : ₹{previous_pending}
+✅ भरलेली रक्कम : *₹{paid_amount}*
+📒 शिल्लक बाकी : *₹{remaining_pending}*
 
-आपले ₹{paid_amount} पेमेंट आज दिनांक {date} रोजी प्राप्त झाले आहे.
+{footer}`,
+  wa_reminder: `🙏 *नमस्कार {customer_name}*,
 
-मागील बाकी: ₹{previous_pending}
-भरलेली रक्कम: ₹{paid_amount}
-शिल्लक बाकी: ₹{remaining_pending}
+🔔 आपल्या खात्यावर *₹{pending_amount}* रक्कम बाकी आहे.
 
-धन्यवाद.
+कृपया सोयीने आपली बाकी रक्कम जमा करावी. 🙏
 
-{shop_name}
-{shop_place}`,
-  wa_reminder: `नमस्कार {customer_name},
+{footer}`,
+  wa_summary: `💧 *{shop_name}*, {shop_place}
 
-आपल्या खात्यावर ₹{pending_amount} रक्कम बाकी आहे.
+📊 *आजचा व्यवहार*
+📅 दिनांक: *{date}*
+${LINE}
+📤 आज दिलेले जार : *{given}*
+📥 आज परत आलेले जार : *{returned}*
 
-कृपया सोयीने आपली बाकी रक्कम जमा करावी.
+💵 आजची Cash Collection : *₹{cash}*
+📒 आजची Udhari : ₹{udhari}
+✅ आज मिळालेले Payment : ₹{payments}
 
-धन्यवाद.
+⏳ एकूण Pending : *₹{pending}*
 
-{shop_name}
-{shop_place}`,
-  wa_summary: `{shop_name}
-{shop_place}
-
-आजचा व्यवहार
-दिनांक: {date}
-
-आज दिलेले जार: {given}
-
-आज परत आलेले जार: {returned}
-
-आजची Cash Collection: ₹{cash}
-
-आजची Udhari: ₹{udhari}
-
-आज मिळालेले Payment: ₹{payments}
-
-एकूण Pending: ₹{pending}
-
-धन्यवाद.`,
+{footer}`,
 };
 
 function amt(v) {
@@ -83,14 +87,24 @@ export function fillTemplate(template, values) {
 }
 
 function shopValues(settings) {
-  return {
+  const base = {
     shop_name: settings?.business_name_mr || 'साई वॉटर सप्लायर्स',
     shop_place: settings?.business_place_mr || 'कोळेवाडी',
+    owner_name: settings?.owner_name_mr || 'श्री. अतुल भागवत',
+    contact_lines: String(settings?.contact_numbers || '9404349071, 8308285774')
+      .split(/[,\n]/)
+      .map((n) => n.trim())
+      .filter(Boolean)
+      .map((n) => `📱 ${n}`)
+      .join('\n'),
   };
+  return { ...base, footer: fillTemplate(DEFAULT_FOOTER, base) };
 }
 
+/** Template text for a message; makes sure the closing {footer} block is always there. */
 function tpl(settings, key) {
-  return settings?.[key] || DEFAULT_TEMPLATES[key];
+  const text = settings?.[key] || DEFAULT_TEMPLATES[key];
+  return text.includes('{footer}') ? text : `${text.trimEnd()}\n\n{footer}`;
 }
 
 /** Indian mobile → wa.me international format (91XXXXXXXXXX). */
@@ -204,20 +218,19 @@ export const messages = {
 export function ledgerText(settings, customer, rows) {
   const shop = shopValues(settings);
   const lines = rows.slice(-15).map((r) => {
-    if (r.entry_type === 'payment') return `${fmtDate(r.entry_date)} | जमा ₹${amt(r.paid)} | बाकी ₹${amt(r.balance)}`;
-    if (r.entry_type === 'returned') return `${fmtDate(r.entry_date)} | परत ${r.jars_returned} जार | जार ${r.jar_balance}`;
-    return `${fmtDate(r.entry_date)} | दिले ${r.jars_given} जार | ₹${amt(r.amount)} | भरले ₹${amt(r.paid)} | बाकी ₹${amt(r.balance)}`;
+    if (r.entry_type === 'payment') return `✅ ${fmtDate(r.entry_date)} | जमा ₹${amt(r.paid)} | बाकी ₹${amt(r.balance)}`;
+    if (r.entry_type === 'returned') return `↩️ ${fmtDate(r.entry_date)} | परत ${r.jars_returned} जार | जार ${r.jar_balance}`;
+    return `💧 ${fmtDate(r.entry_date)} | दिले ${r.jars_given} जार | ₹${amt(r.amount)} | भरले ₹${amt(r.paid)} | बाकी ₹${amt(r.balance)}`;
   });
-  return `नमस्कार ${customer.name},
+  return `🙏 *नमस्कार ${customer.name}*,
 
-आपला हिशोब:
+📒 *आपला हिशोब*
+${LINE}
 ${lines.join('\n')}
+${LINE}
 
-सध्या आपल्याकडे जार: ${customer.current_jars}
-एकूण बाकी: ₹${amt(customer.pending_amount)}
+💧 सध्या आपल्याकडे जार : *${customer.current_jars}*
+💰 एकूण बाकी : *₹${amt(customer.pending_amount)}*
 
-धन्यवाद.
-
-${shop.shop_name}
-${shop.shop_place}`;
+${shop.footer}`;
 }

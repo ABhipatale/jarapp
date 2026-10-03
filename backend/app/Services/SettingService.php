@@ -13,6 +13,9 @@ class SettingService
         'business_address' => 'Kolewadi',
         'business_place_mr' => 'कोळेवाडी',
         'business_mobile' => '',
+        // Shown at the end of every WhatsApp message (संपर्क block).
+        'owner_name_mr' => 'श्री. अतुल भागवत',
+        'contact_numbers' => '9404349071, 8308285774',
         'default_rate' => '30',
         'jar_tracking' => '0',
         'expense_types' => 'डिझेल,पगार,वीज बिल,जार खरेदी,दुरुस्ती,इतर',
