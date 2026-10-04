@@ -27,7 +27,14 @@ ${LINE}
 ▫️ जार दर : ₹{rate}
 ▫️ एकूण रक्कम : *₹{amount}*
 ✅ भरलेली रक्कम : ₹{paid}
-📒 उधारी : ₹{udhari}
+📒 आजची उधारी : ₹{udhari}
+${LINE}
+
+💰 *उधारी हिशोब*
+${LINE}
+▫️ मागील बाकी : ₹{previous_pending}
+➕ आजची उधारी : ₹{udhari}
+{advance_line}🔴 *एकूण बाकी : ₹{total_pending}*
 ${LINE}
 
 💧 सध्या आपल्याकडे एकूण *{current_jars} जार* आहेत.
@@ -38,6 +45,7 @@ ${LINE}
 ↩️ आज दिनांक *{date}* रोजी *{returned_jars} पाण्याचे जार* परत मिळाले.
 
 💧 सध्या आपल्याकडे एकूण *{current_jars} जार* आहेत.
+💰 एकूण बाकी : *₹{total_pending}*
 
 {footer}`,
   wa_payment: `🙏 *नमस्कार {customer_name}*,
@@ -78,6 +86,12 @@ ${LINE}
 function amt(v) {
   const n = Number(v) || 0;
   return Number.isInteger(n) ? String(n) : n.toFixed(2);
+}
+
+/** "250" for money owed; "0 (आगाऊ जमा ₹50)" when the customer has paid in advance. */
+function pendingAmt(v) {
+  const n = Math.round((Number(v) || 0) * 100) / 100;
+  return n < 0 ? `0 (आगाऊ जमा ₹${amt(-n)})` : amt(n);
 }
 
 export function fillTemplate(template, values) {
@@ -171,6 +185,11 @@ export const messages = {
       amount: amt(t.amount),
       paid: amt(Number(t.paid_amount) + Number(t.advance_amount || 0)),
       udhari: amt(t.udhari_amount),
+      // pending_amount is the customer's total AFTER this entry (from the server).
+      // Before it: total − today's udhari + advance paid today.
+      previous_pending: pendingAmt(Number(t.pending_amount) - Number(t.udhari_amount || 0) + Number(t.advance_amount || 0)),
+      advance_line: Number(t.advance_amount) > 0 ? `➖ आगाऊ जमा : ₹${amt(t.advance_amount)}\n` : '',
+      total_pending: pendingAmt(t.pending_amount),
       current_jars: t.current_jars,
       return_line: t.returned_quantity > 0 ? `↩️ आपल्याकडून *${t.returned_quantity} रिकामे जार* परत घेतले.\n` : '',
     });
@@ -182,6 +201,7 @@ export const messages = {
       date: fmtDate(t.transaction_date || today()),
       returned_jars: t.jar_quantity,
       current_jars: t.current_jars,
+      total_pending: pendingAmt(t.pending_amount),
     });
   },
   payment(settings, p) {
