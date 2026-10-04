@@ -15,6 +15,8 @@ class JarTransactionRequest extends ApiRequest
             'jar_quantity' => ['required', 'integer', 'min:1', 'max:10000'],
             // GIVE only: empty jars taken back at the same delivery (saved as a RETURN entry).
             'return_quantity' => ['nullable', 'integer', 'min:0', 'max:10000'],
+            // GIVE only: follow-up reminder after 1, 7 or 15 days (0/empty = none).
+            'reminder_days' => ['nullable', 'integer', 'in:0,1,7,15'],
             'payment_type' => ['nullable', 'in:cash,udhari'],
             'rate' => ['nullable', 'numeric', 'min:0', 'max:100000'],
             'paid_amount' => ['nullable', 'numeric', 'min:0', 'max:10000000'],

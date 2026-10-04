@@ -28,6 +28,8 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Phone notifications for jar reminders (public/push-sw.js).
+        importScripts: ['push-sw.js'],
         navigateFallback: '/index.html',
         // /api and /up belong to the Laravel service; never answer them with the app shell.
         navigateFallbackDenylist: [/^\/api\//, /^\/up$/],

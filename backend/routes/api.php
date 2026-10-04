@@ -6,12 +6,16 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\JarController;
 use App\Http\Controllers\Api\JarTransactionController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\SettingController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+
+// Daily reminder job (Vercel Cron). Idempotent: only sends due reminders, each once.
+Route::get('/cron/reminders', [NotificationController::class, 'cron'])->middleware('throttle:10,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
@@ -42,6 +46,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pending', 'pending');
         Route::get('/jar-status', 'jarStatus');
     });
+
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/count', [NotificationController::class, 'count']);
+    Route::post('/notifications/read', [NotificationController::class, 'readAll']);
+    Route::post('/notifications/{reminder}/done', [NotificationController::class, 'done']);
+    Route::delete('/notifications/{reminder}', [NotificationController::class, 'destroy']);
+    Route::get('/push/key', [NotificationController::class, 'pushKey']);
+    Route::post('/push/subscribe', [NotificationController::class, 'subscribe']);
+    Route::post('/push/unsubscribe', [NotificationController::class, 'unsubscribe']);
 
     Route::get('/settings', [SettingController::class, 'show']);
     Route::put('/settings', [SettingController::class, 'update']);

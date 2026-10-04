@@ -6,7 +6,7 @@ import { Field, PageHeader, Segmented, Stepper } from '../components/ui';
 import { useSettings } from '../context/SettingsContext';
 import { useUi } from '../context/UiContext';
 import { t } from '../i18n';
-import { money, num, round2, today, uuid } from '../lib/format';
+import { addDays, fmtDate, money, num, round2, today, uuid } from '../lib/format';
 import { submit } from '../lib/outbox';
 import { messages, openWhatsApp } from '../lib/whatsapp';
 
@@ -40,6 +40,8 @@ export default function DailyEntry() {
   const [notes, setNotes] = useState('');
   const [clientUuid, setClientUuid] = useState(uuid);
   const [busy, setBusy] = useState(false);
+  // GIVE only: follow-up reminder (0 = none). Default 15 days.
+  const [reminderDays, setReminderDays] = useState(15);
   const [result, setResult] = useState(null);
   // GIVE only: empty jars the customer hands back at the same delivery (optional).
   const [takeBack, setTakeBack] = useState(false);
@@ -102,17 +104,17 @@ export default function DailyEntry() {
       transaction_type: type,
       jar_quantity: q,
       notes: notes || null,
-      ...(type === 'given' && { rate: num(rate), payment_type: payType, paid_amount: paid, advance_amount: num(advance), return_quantity: r }),
+      ...(type === 'given' && { rate: num(rate), payment_type: payType, paid_amount: paid, advance_amount: num(advance), return_quantity: r, reminder_days: reminderDays }),
     };
     try {
       const label = r > 0 ? t('entry.outboxGiveReturn', { q, r, name: customer?.name }) : t(type === 'given' ? 'entry.outboxGive' : 'entry.outboxReturn', { q, name: customer?.name });
       const res = await submit('/jar-transactions', body, label);
       if (res.queued) {
         toast(t('entry.queuedToast'), 'info');
-        setResult({ queued: true, customer_name: customer?.name, transaction_type: type, jar_quantity: q, returned_quantity: r });
+        setResult({ queued: true, customer_name: customer?.name, transaction_type: type, jar_quantity: q, returned_quantity: r, reminder_days: type === 'given' ? reminderDays : 0, transaction_date: date });
       } else {
         toast(res.data.message || t('entry.savedOk'));
-        setResult({ ...res.data.data, customer_name: customer?.name, customer_mobile: customer?.mobile });
+        setResult({ ...res.data.data, customer_name: customer?.name, customer_mobile: customer?.mobile, reminder_days: type === 'given' ? reminderDays : 0 });
         setCustomer((c) => c && { ...c, current_jars: res.data.data.current_jars, pending_amount: res.data.data.pending_amount });
         loadStock();
       }
@@ -132,6 +134,7 @@ export default function DailyEntry() {
     setPayType('cash');
     setTakeBack(false);
     setRetQty('');
+    setReminderDays(15);
     setClientUuid(uuid());
     if (!keepCustomer) {
       setCustomerId('');
@@ -259,6 +262,25 @@ export default function DailyEntry() {
         </div>
       )}
 
+      {type === 'given' && (
+        <div className="card space-y-2">
+          <div className="text-sm font-medium text-slate-600">{t('entry.reminder')}</div>
+          <div className="flex flex-wrap gap-2">
+            {[
+              [0, t('entry.reminderNone')],
+              [1, t('entry.reminder1')],
+              [7, t('entry.reminder7')],
+              [15, t('entry.reminder15')],
+            ].map(([d, label]) => (
+              <button key={d} type="button" className={`chip ${reminderDays === d ? 'chip-active' : ''}`} onClick={() => setReminderDays(d)}>
+                {label}
+              </button>
+            ))}
+          </div>
+          {reminderDays > 0 && <p className="text-xs text-slate-500">{t('entry.reminderHint', { date: fmtDate(addDays(date, reminderDays)) })}</p>}
+        </div>
+      )}
+
       <div className="card">
         <Field label={t('entry.notes')}>
           <input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} placeholder={t('entry.optional')} />
@@ -294,6 +316,7 @@ function SavedCard({ result, settings, onNew }) {
           <Row label={t('entry.customer')} value={result.customer_name} />
           <Row label={isGive ? t('entry.given') : t('entry.returned')} value={t('entry.jarsN', { n: result.jar_quantity })} />
           {isGive && result.returned_quantity > 0 && <Row label={t('entry.takenBack')} value={t('entry.jarsN', { n: result.returned_quantity })} />}
+          {isGive && result.reminder_days > 0 && <Row label={t('entry.reminderRow')} value={`🔔 ${fmtDate(addDays(result.transaction_date, result.reminder_days))}`} />}
           {!result.queued && (
             <>
               {isGive && (

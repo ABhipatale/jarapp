@@ -4,6 +4,7 @@ import logo from '../assets/logo.png';
 import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
 import { useUi } from '../context/UiContext';
+import api from '../api/client';
 import { discard, outboxItems, subscribe, syncOutbox } from '../lib/outbox';
 import { t } from '../i18n';
 import { businessName, businessPlace } from '../lib/format';
@@ -19,6 +20,7 @@ const NAV = [
 ];
 
 const MENU = [
+  { to: '/notifications', label: t('notif.title'), icon: '🔔' },
   { to: '/transactions', label: t('nav.allJarEntries'), icon: '📋' },
   { to: '/expenses', label: t('nav.expenses'), icon: '🧾' },
   { to: '/settings', label: t('nav.settings'), icon: '⚙️' },
@@ -35,6 +37,16 @@ export default function Layout() {
   const location = useLocation();
 
   useEffect(() => setMenu(false), [location.pathname]);
+
+  // 🔔 unread due reminders (also lets the server process today's reminders once a day).
+  const [unread, setUnread] = useState(0);
+  useEffect(() => {
+    const load = () => api.get('/notifications/count').then((r) => setUnread(r.data.unread)).catch(() => {});
+    load();
+    const timer = setInterval(load, 5 * 60 * 1000);
+    window.addEventListener('rws:notifications', load);
+    return () => { clearInterval(timer); window.removeEventListener('rws:notifications', load); };
+  }, []);
 
   useEffect(() => {
     const unsub = subscribe(setQueue);
@@ -63,6 +75,14 @@ export default function Layout() {
               <div className="truncate font-bold">{businessName(settings)}</div>
               <div className="truncate text-xs text-blue-100">{`${businessPlace(settings)} · ${t('common.jarMgmt')}`}</div>
             </div>
+          </Link>
+          <Link to="/notifications" className="relative grid h-10 w-10 place-items-center rounded-full text-xl hover:bg-white/15" aria-label={t('notif.title')}>
+            🔔
+            {unread > 0 && (
+              <span className="absolute right-0.5 top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[11px] font-bold leading-none text-white ring-2 ring-brand-700">
+                {unread > 99 ? '99+' : unread}
+              </span>
+            )}
           </Link>
           <button className="grid h-10 w-10 place-items-center rounded-full text-2xl hover:bg-white/15" onClick={() => setMenu((m) => !m)} aria-label={t('layout.menu')}>
             ☰

@@ -13,6 +13,7 @@ class PaymentService
     public function __construct(
         private BalanceService $balances,
         private LedgerService $ledger,
+        private ReminderService $reminders,
     ) {}
 
     /** @return array{0: Payment, 1: bool} */
@@ -51,6 +52,7 @@ class PaymentService
                 ]);
 
                 $this->ledger->rebuild($payment->customer_id);
+                $this->reminders->syncCustomer($payment->customer_id);
 
                 return [$payment, true];
             });
@@ -94,6 +96,7 @@ class PaymentService
             ]);
 
             $this->ledger->rebuild($payment->customer_id);
+            $this->reminders->syncCustomer($payment->customer_id);
 
             return $payment->fresh();
         });
@@ -105,6 +108,7 @@ class PaymentService
             Customer::withTrashed()->whereKey($payment->customer_id)->lockForUpdate()->first();
             $payment->delete();
             $this->ledger->rebuild($payment->customer_id);
+            $this->reminders->syncCustomer($payment->customer_id);
         });
     }
 }

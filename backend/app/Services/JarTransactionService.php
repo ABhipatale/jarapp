@@ -15,6 +15,7 @@ class JarTransactionService
         private BalanceService $balances,
         private LedgerService $ledger,
         private JarService $jars,
+        private ReminderService $reminders,
     ) {}
 
     /**
@@ -96,7 +97,9 @@ class JarTransactionService
                 }
 
                 $tx = JarTransaction::create($row);
+                $this->reminders->forGive($tx, $data['reminder_days'] ?? null);
                 $this->ledger->rebuild($tx->customer_id);
+                $this->reminders->syncCustomer($tx->customer_id);
 
                 return [$tx, true, $this->balances->forCustomer($tx->customer_id), $returnQty ?? 0];
             });
@@ -166,7 +169,9 @@ class JarTransactionService
             }
 
             $tx->update($row);
+            $this->reminders->reschedule($tx->fresh());
             $this->ledger->rebuild($tx->customer_id);
+            $this->reminders->syncCustomer($tx->customer_id);
 
             return [$tx->fresh(), $this->balances->forCustomer($tx->customer_id)];
         });
@@ -224,7 +229,9 @@ class JarTransactionService
             }
 
             $tx->delete();
+            $this->reminders->removeFor($tx);
             $this->ledger->rebuild($tx->customer_id);
+            $this->reminders->syncCustomer($tx->customer_id);
         });
     }
 }

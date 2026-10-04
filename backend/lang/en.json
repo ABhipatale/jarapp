@@ -76,5 +76,12 @@
     "परत": "returned",
     "नोंद बदलली.": "Entry updated.",
     "पेमेंट बदलले.": "Payment updated.",
-    "ग्राहकाने यातील काही जार आधीच परत केले आहेत. दिलेले जार :min पेक्षा कमी करता येणार नाहीत.": "The customer has already returned some of these jars. Jars given cannot be less than :min."
+    "ग्राहकाने यातील काही जार आधीच परत केले आहेत. दिलेले जार :min पेक्षा कमी करता येणार नाहीत.": "The customer has already returned some of these jars. Jars given cannot be less than :min.",
+    "🔔 :name – जार/उधारी आठवण": "🔔 :name – jar/payment reminder",
+    "🔔 आज :n आठवणी": "🔔 :n reminders today",
+    ":date रोजी :qty जार दिले होते. सध्या :jars जार व ₹:pending बाकी.": "Gave :qty jars on :date. Now holds :jars jars, ₹:pending pending.",
+    "आठवण पूर्ण केली.": "Reminder marked done.",
+    "आठवण हटवली.": "Reminder deleted.",
+    "या फोनवर सूचना चालू झाल्या.": "Notifications turned on for this phone.",
+    "या फोनवर सूचना बंद केल्या.": "Notifications turned off for this phone."
 }
