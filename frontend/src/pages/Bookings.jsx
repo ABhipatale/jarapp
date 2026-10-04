@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AlertTriangle, CalendarClock, CalendarDays, CheckCircle2, MessageCircle, Pencil, Phone, Plus, StickyNote, Truck, User, X, XCircle } from 'lucide-react';
 import api, { errorMessage } from '../api/client';
 import CustomerPicker from '../components/CustomerPicker';
 import { Empty, ErrorBox, Field, Loader, Modal, PageHeader, Stepper } from '../components/ui';
@@ -12,7 +13,7 @@ import { useApi } from '../lib/useApi';
 import { messages, openWhatsApp } from '../lib/whatsapp';
 
 /**
- * 📅 Advance jar bookings: "10 jars on 08-10-2026".
+ * Advance jar bookings: "10 jars on 08-10-2026".
  * The owner gets a phone notification the night before (~8 PM) and that morning (~7 AM).
  * "Deliver" opens the normal Give Jar screen pre-filled; saving it closes the booking.
  */
@@ -39,72 +40,134 @@ export default function Bookings() {
   };
 
   return (
-    <div className="space-y-4">
-      <PageHeader title={t('book.title')} subtitle={t('book.subtitle')} back />
+    <div className="space-y-5">
+      <PageHeader
+        title={t('book.title')}
+        subtitle={t('book.subtitle')}
+        back
+        right={
+          <button className="btn-primary btn-sm hidden sm:inline-flex" onClick={() => setShowForm(true)}>
+            <Plus size={16} /> {t('book.ui.new')}
+          </button>
+        }
+      />
 
-      <button className="btn-primary w-full py-4 text-lg" onClick={() => setShowForm(true)}>
-        {t('book.new')}
+      <button className="btn-primary w-full py-3.5 sm:hidden" onClick={() => setShowForm(true)}>
+        <Plus size={20} /> {t('book.ui.new')}
       </button>
 
       {error && <ErrorBox message={error} onRetry={reload} />}
       {loading && !data && <Loader />}
 
-      {data && data.open.length === 0 && <Empty>{t('book.none')}</Empty>}
+      {data && data.open.length === 0 && (
+        <Empty
+          icon={CalendarClock}
+          title={t('book.none')}
+          action={
+            <button className="btn-light btn-sm" onClick={() => setShowForm(true)}>
+              <Plus size={16} /> {t('book.ui.new')}
+            </button>
+          }
+        >
+          {t('book.ui.emptyHint')}
+        </Empty>
+      )}
 
       {groups.map(([date, items]) => {
         const late = date < today();
-        const label = late ? t('book.overdue') : date === today() ? t('book.today') : date === tomorrow ? t('book.tomorrow') : fmtLongDate(date);
+        const isToday = date === today();
+        const label = late ? t('book.ui.overdue') : isToday ? t('book.today') : date === tomorrow ? t('book.tomorrow') : fmtLongDate(date);
         const jars = items.reduce((s, b) => s + b.jar_quantity, 0);
         return (
-          <section key={date} className="space-y-2">
-            <h2 className={`flex items-center justify-between text-sm font-semibold uppercase tracking-wide ${late ? 'text-red-600' : 'text-slate-500'}`}>
-              <span>
-                {label} {!late && date !== today() && date !== tomorrow ? '' : `· ${fmtDate(date)}`}
+          <section key={date} className="space-y-3">
+            <h2 className={`section-title flex items-center justify-between gap-2 ${late ? '!text-red-600' : isToday ? '!text-amber-700' : ''}`}>
+              <span className="flex min-w-0 items-center gap-1.5">
+                {late ? <AlertTriangle size={15} /> : <CalendarDays size={15} />}
+                <span className="truncate">
+                  {label} {!late && !isToday && date !== tomorrow ? '' : `· ${fmtDate(date)}`}
+                </span>
               </span>
-              <span className="normal-case">{t('book.dayTotal', { n: items.length, jars })}</span>
+              <span className="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-semibold normal-case tracking-normal text-slate-600 tabular-nums">
+                {t('book.dayTotal', { n: items.length, jars })}
+              </span>
             </h2>
-            {items.map((b) => (
-              <div key={b.id} className={`card !py-3 ${late ? '!ring-red-300' : date === today() ? '!ring-amber-300' : ''}`}>
-                <div className="flex items-start justify-between gap-3">
-                  <Link to={`/customers/${b.customer_id}`} className="min-w-0">
-                    <div className="truncate font-semibold">{b.customer_name}</div>
-                    <div className="text-xs text-slate-500">📅 {fmtDate(b.delivery_date)} · {b.customer_mobile}</div>
-                    {b.notes && <div className="mt-0.5 text-sm text-slate-600">📝 {b.notes}</div>}
-                  </Link>
-                  <div className="shrink-0 text-right text-2xl font-bold text-brand-800">
-                    {b.jar_quantity}
-                    <span className="block text-xs font-medium text-slate-500">{t('book.jars')}</span>
+            <div className="grid gap-3 lg:grid-cols-2">
+              {items.map((b) => (
+                <div key={b.id} className={`card !py-3.5 ${late ? '!ring-red-300' : isToday ? '!ring-amber-300' : ''}`}>
+                  <div className="flex items-start gap-3">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-50 text-sm font-semibold text-brand-700">
+                      {(b.customer_name || '?').charAt(0).toUpperCase()}
+                    </span>
+                    <Link to={`/customers/${b.customer_id}`} className="min-w-0 flex-1">
+                      <div className="truncate font-semibold text-ink hover:text-brand-700">{b.customer_name}</div>
+                      <div className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted">
+                        <span className="inline-flex items-center gap-1">
+                          <CalendarClock size={12} /> {fmtDate(b.delivery_date)}
+                        </span>
+                        {b.customer_mobile && (
+                          <>
+                            <span aria-hidden="true">·</span>
+                            <span className="inline-flex items-center gap-1 tabular-nums">
+                              <Phone size={12} /> {b.customer_mobile}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      {b.notes && (
+                        <div className="mt-1 flex items-start gap-1.5 text-sm text-slate-600">
+                          <StickyNote size={14} className="mt-0.5 shrink-0 text-slate-400" /> <span className="min-w-0">{b.notes}</span>
+                        </div>
+                      )}
+                    </Link>
+                    <div className="shrink-0 text-right">
+                      <div className="text-2xl font-semibold leading-none tracking-tight text-brand-700 tabular-nums">{b.jar_quantity}</div>
+                      <div className="mt-1 text-xs font-medium text-muted">{t('book.jars')}</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-line pt-3">
+                    <button className="btn-light btn-sm text-red-600" onClick={() => cancel(b)}>
+                      <X size={15} /> {t('book.ui.cancel')}
+                    </button>
+                    <button className="icon-btn" onClick={() => setEditing(b)} aria-label={t('book.edit')} title={t('book.edit')}>
+                      <Pencil size={17} />
+                    </button>
+                    <button className="btn-wa btn-sm !px-2.5" onClick={() => openWhatsApp(b.customer_mobile, messages.booking(settings, b))} aria-label="WhatsApp" title="WhatsApp">
+                      <MessageCircle size={16} />
+                    </button>
+                    {date <= today() && (
+                      <Link to={`/entry?type=given&customer=${b.customer_id}&qty=${b.jar_quantity}&booking=${b.id}`} className="btn-primary btn-sm">
+                        <Truck size={16} /> {t('book.ui.deliver')}
+                      </Link>
+                    )}
                   </div>
                 </div>
-                <div className="mt-2 flex flex-wrap justify-end gap-2">
-                  {date <= today() && (
-                    <Link to={`/entry?type=given&customer=${b.customer_id}&qty=${b.jar_quantity}&booking=${b.id}`} className="btn-primary btn-sm">
-                      {t('book.deliver')}
-                    </Link>
-                  )}
-                  <button className="btn-wa btn-sm" onClick={() => openWhatsApp(b.customer_mobile, messages.booking(settings, b))}>💬</button>
-                  <button className="btn-light btn-sm" onClick={() => setEditing(b)} aria-label={t('book.edit')}>✏️</button>
-                  <button className="btn-light btn-sm text-red-600" onClick={() => cancel(b)}>{t('book.cancel')}</button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </section>
         );
       })}
 
       {data && data.closed.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">{t('book.closed')}</h2>
-          {data.closed.map((b) => (
-            <div key={b.id} className="card flex items-center justify-between !py-2.5 opacity-70">
-              <span className="min-w-0 truncate">
-                {b.customer_name} · {b.jar_quantity} {t('book.jars')} · {fmtDate(b.delivery_date)}
-              </span>
-              <span className={`shrink-0 text-xs font-semibold ${b.status === 'delivered' ? 'text-emerald-700' : 'text-slate-500'}`}>
-                {b.status === 'delivered' ? t('book.delivered') : t('book.cancelledLabel')}
-              </span>
-            </div>
-          ))}
+        <section className="space-y-3">
+          <h2 className="section-title">{t('book.closed')}</h2>
+          <div className="card divide-y divide-line !p-0">
+            {data.closed.map((b) => (
+              <div key={b.id} className="flex items-center gap-3 px-4 py-3">
+                <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${b.status === 'delivered' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                  {b.status === 'delivered' ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-ink">{b.customer_name}</span>
+                  <span className="block text-xs text-muted tabular-nums">
+                    {b.jar_quantity} {t('book.jars')} · {fmtDate(b.delivery_date)}
+                  </span>
+                </span>
+                <span className={`shrink-0 text-xs font-semibold ${b.status === 'delivered' ? 'text-emerald-700' : 'text-slate-500'}`}>
+                  {b.status === 'delivered' ? t('book.ui.delivered') : t('book.cancelledLabel')}
+                </span>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 
@@ -166,10 +229,12 @@ function BookingForm({ booking, onClose, onSaved }) {
   };
 
   return (
-    <Modal title={editing ? t('book.editTitle') : t('book.new')} onClose={onClose}>
+    <Modal title={editing ? t('book.editTitle') : t('book.ui.new')} onClose={onClose}>
       <div className="space-y-4">
         {editing ? (
-          <div className="rounded-xl bg-slate-50 px-3 py-2 font-semibold">👤 {booking.customer_name}</div>
+          <div className="flex items-center gap-2.5 rounded-lg bg-surface-2 px-3 py-2.5 font-semibold text-ink ring-1 ring-line">
+            <User size={17} className="text-muted" /> {booking.customer_name}
+          </div>
         ) : (
           <Field group label={t('book.customer')}>
             <CustomerPicker value={customerId} onChange={(id, c) => { setCustomerId(id || ''); setCustomer(c); }} />
@@ -186,7 +251,9 @@ function BookingForm({ booking, onClose, onSaved }) {
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <button type="button" className="btn-light" onClick={onClose}>{t('book.close')}</button>
-          <button type="button" className="btn-primary" disabled={busy} onClick={save}>{busy ? t('book.saving') : t('book.save')}</button>
+          <button type="button" className="btn-primary" disabled={busy} onClick={save}>
+            <CalendarClock size={18} /> {busy ? t('book.saving') : t('book.save')}
+          </button>
         </div>
       </div>
     </Modal>

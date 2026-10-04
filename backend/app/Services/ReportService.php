@@ -143,6 +143,48 @@ class ReportService
         ])->all();
     }
 
+    /**
+     * Daily figures for charts: jars given/returned, cash collected, udhari created, payments.
+     * Every day in the range is present (zeros included).
+     */
+    public function dailySeries(string $from, string $to): array
+    {
+        $tx = DB::table('jar_transactions')->whereNull('deleted_at')
+            ->whereBetween('transaction_date', [$from, $to])
+            ->groupBy('transaction_date')
+            ->selectRaw('transaction_date AS d')
+            ->selectRaw("SUM(CASE WHEN transaction_type = 'given' THEN jar_quantity ELSE 0 END) AS given")
+            ->selectRaw("SUM(CASE WHEN transaction_type = 'returned' THEN jar_quantity ELSE 0 END) AS returned")
+            ->selectRaw('SUM(paid_amount + advance_amount) AS entry_cash')
+            ->selectRaw('SUM(udhari_amount) AS udhari')
+            ->get()->keyBy(fn ($r) => substr((string) $r->d, 0, 10));
+
+        $pay = DB::table('payments')->whereNull('deleted_at')
+            ->whereBetween('payment_date', [$from, $to])
+            ->groupBy('payment_date')
+            ->selectRaw('payment_date AS d')
+            ->selectRaw('SUM(amount) AS total')
+            ->selectRaw("SUM(CASE WHEN payment_mode = 'cash' THEN amount ELSE 0 END) AS cash")
+            ->get()->keyBy(fn ($r) => substr((string) $r->d, 0, 10));
+
+        $rows = [];
+        foreach (CarbonPeriod::create($from, $to) as $day) {
+            $d = $day->toDateString();
+            $t = $tx[$d] ?? null;
+            $p = $pay[$d] ?? null;
+            $rows[] = [
+                'date' => $d,
+                'given' => (int) ($t->given ?? 0),
+                'returned' => (int) ($t->returned ?? 0),
+                'cash' => round((float) ($t->entry_cash ?? 0) + (float) ($p->cash ?? 0), 2),
+                'udhari' => round((float) ($t->udhari ?? 0), 2),
+                'payments' => round((float) ($p->total ?? 0), 2),
+            ];
+        }
+
+        return $rows;
+    }
+
     /** Day-by-day cash book for the period. */
     public function cashBook(string $from, string $to): array
     {

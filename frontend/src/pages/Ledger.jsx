@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { CalendarRange, Clock, Droplets, MessageCircle, Receipt, X } from 'lucide-react';
 import ExportBar from '../components/ExportBar';
 import EditEntryModal from '../components/EditEntryModal';
 import LedgerTable from '../components/LedgerTable';
-import { Empty, ErrorBox, Loader, PageHeader, PendingText, PrintHeader } from '../components/ui';
+import { Empty, ErrorBox, Field, Loader, PageHeader, PendingText, PrintHeader, StatCard } from '../components/ui';
 import { useSettings } from '../context/SettingsContext';
 import { t } from '../i18n';
 import { exportExcel } from '../lib/export';
@@ -47,43 +48,84 @@ export default function Ledger() {
     );
 
   return (
-    <div className="space-y-4">
-      <PageHeader title={t('ledger.title')} subtitle={c.name} back />
+    <div className="space-y-5">
+      <PageHeader title={t('ledger.title')} subtitle={`${c.name} · ${c.mobile}`} back />
       <PrintHeader settings={settings} title={t('ledger.printTitle', { name: c.name, mobile: c.mobile })} subtitle={period} />
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="card text-center">
-          <div className="text-sm text-slate-500">{t('common.currentJars')}</div>
-          <div className="text-3xl font-bold text-brand-800">{c.current_jars}</div>
-        </div>
-        <div className="card text-center">
-          <div className="text-sm text-slate-500">{t('common.totalPending')}</div>
-          <PendingText amount={c.pending_amount} className="text-3xl font-bold" />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+        <StatCard label={t('common.currentJars')} value={c.current_jars} icon={Droplets} tone="blue" />
+        <StatCard label={t('common.totalPending')} value={<PendingText amount={c.pending_amount} />} icon={Clock} tone={c.pending_amount > 0 ? 'red' : 'green'} />
+        <div className="col-span-2 lg:col-span-1">
+          <StatCard label={t('ledger.entriesCount')} value={rows.length} icon={Receipt} tone="slate" sub={period} />
         </div>
       </div>
 
-      <div className="no-print grid grid-cols-2 gap-2">
-        <input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} aria-label={t('ledger.fromDate')} />
-        <input type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} aria-label={t('ledger.toDate')} />
-      </div>
+      <section className="no-print card space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 font-semibold text-ink">
+            <CalendarRange size={18} className="text-muted" aria-hidden="true" /> {t('ledger.period')}
+          </h2>
+          {(from || to) && (
+            <button
+              type="button"
+              className="btn-ghost btn-sm"
+              onClick={() => {
+                setFrom('');
+                setTo('');
+              }}
+            >
+              <X size={15} /> {t('ledger.clearDates')}
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-3 lg:max-w-lg">
+          <Field label={t('ledger.fromDate')}>
+            <input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} />
+          </Field>
+          <Field label={t('ledger.toDate')}>
+            <input type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} />
+          </Field>
+        </div>
+      </section>
 
       <ExportBar
         onExcel={excel}
         extra={
           <button className="btn-wa btn-sm shrink-0" onClick={() => openWhatsApp(c.mobile, ledgerText(settings, c, rows))}>
-            💬 {t('ledger.sendWhatsApp')}
+            <MessageCircle size={16} /> {t('ledger.sendWhatsApp')}
           </button>
         }
       />
 
-      <div className="card">
-        {from && (
-          <p className="mb-2 text-sm text-slate-600">
-            {t('ledger.openingBalance')} <b>{money(data.opening.balance)}</b> · {t('ledger.openingJars')} <b>{data.opening.jar_balance}</b>
-          </p>
+      <section className="card overflow-hidden !p-0">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3.5">
+          <div className="min-w-0">
+            <h2 className="font-semibold text-ink">{t('ledger.entries')}</h2>
+            <p className="text-xs text-muted">{period}</p>
+          </div>
+          {from && (
+            <div className="flex flex-wrap gap-2 text-xs">
+              <span className="rounded-md bg-surface-2 px-2 py-1 text-muted ring-1 ring-line">
+                {t('ledger.openingBalance')} <b className="font-semibold tabular-nums text-ink">{money(data.opening.balance)}</b>
+              </span>
+              <span className="rounded-md bg-surface-2 px-2 py-1 text-muted ring-1 ring-line">
+                {t('ledger.openingJars')} <b className="font-semibold tabular-nums text-ink">{data.opening.jar_balance}</b>
+              </span>
+            </div>
+          )}
+        </div>
+        {loading ? (
+          <div className="p-4">
+            <Loader />
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="p-4">
+            <Empty icon={Receipt}>{t('ledger.noEntries')}</Empty>
+          </div>
+        ) : (
+          <LedgerTable rows={rows} onEdit={setEditing} flush />
         )}
-        {loading ? <Loader /> : rows.length === 0 ? <Empty>{t('ledger.noEntries')}</Empty> : <LedgerTable rows={rows} onEdit={setEditing} />}
-      </div>
+      </section>
       {editing && <EditEntryModal kind={editing.kind} id={editing.id} onClose={() => setEditing(null)} onSaved={reload} />}
     </div>
   );

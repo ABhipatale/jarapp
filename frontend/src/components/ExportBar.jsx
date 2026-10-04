@@ -1,3 +1,4 @@
+import { FileSpreadsheet, FileText, Printer } from 'lucide-react';
 import { useUi } from '../context/UiContext';
 import { t } from '../i18n';
 import { printPage } from '../lib/export';
@@ -6,10 +7,10 @@ import { printPage } from '../lib/export';
 export default function ExportBar({ onExcel, extra }) {
   const { toast } = useUi();
   return (
-    <div className="no-print no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
+    <div className="no-print no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
       {onExcel && (
         <button className="btn-light btn-sm shrink-0" onClick={onExcel}>
-          📗 Excel
+          <FileSpreadsheet size={16} className="text-emerald-700" /> Excel
         </button>
       )}
       <button
@@ -19,10 +20,10 @@ export default function ExportBar({ onExcel, extra }) {
           setTimeout(printPage, 400);
         }}
       >
-        📄 PDF
+        <FileText size={16} className="text-red-600" /> PDF
       </button>
       <button className="btn-light btn-sm shrink-0" onClick={printPage}>
-        🖨 {t('export.print')}
+        <Printer size={16} className="text-muted" /> {t('export.print')}
       </button>
       {extra}
     </div>

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AlertTriangle, ChevronRight, CircleCheck, CircleHelp, Droplets, House, Info, PackagePlus, Save, SearchCheck, UserRound, Wrench } from 'lucide-react';
 import api, { errorMessage } from '../api/client';
+import { StackBar } from '../components/charts';
 import CustomerPicker from '../components/CustomerPicker';
 import { Badge, ErrorBox, Field, Loader, Modal, PageHeader, StatCard, Stepper } from '../components/ui';
 import { useSettings } from '../context/SettingsContext';
@@ -10,11 +12,11 @@ import { today } from '../lib/format';
 import { useApi } from '../lib/useApi';
 
 const ACTIONS = {
-  add: { title: t('jars.add'), icon: '➕', btn: 'btn-primary' },
-  damaged: { title: t('jars.damaged'), icon: '⚠️', btn: 'btn-danger' },
-  lost: { title: t('jars.lost'), icon: '❓', btn: 'btn-danger' },
-  repaired: { title: t('jars.repaired'), icon: '🔧', btn: 'btn-primary' },
-  found: { title: t('jars.found'), icon: '🔍', btn: 'btn-primary' },
+  add: { title: t('jars.add'), icon: PackagePlus, btn: 'btn-primary', tint: 'bg-brand-50 text-brand-700' },
+  damaged: { title: t('jars.damaged'), icon: AlertTriangle, btn: 'btn-danger', tint: 'bg-red-50 text-red-600' },
+  lost: { title: t('jars.lost'), icon: CircleHelp, btn: 'btn-danger', tint: 'bg-amber-50 text-amber-700' },
+  repaired: { title: t('jars.repaired'), icon: Wrench, btn: 'btn-primary', tint: 'bg-emerald-50 text-emerald-700' },
+  found: { title: t('jars.found'), icon: SearchCheck, btn: 'btn-primary', tint: 'bg-sky-50 text-sky-700' },
 };
 
 const STATUSES = ['available', 'with_customer', 'returned', 'damaged', 'lost'];
@@ -66,7 +68,7 @@ export default function Jars() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <PageHeader title={t('jars.title')} subtitle={t('jars.subtitle')} />
 
       {error && <ErrorBox message={error} onRetry={reload} />}
@@ -74,59 +76,105 @@ export default function Jars() {
 
       {s && (
         <>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <StatCard label={t('jars.availableLabel')} value={s.available_jars} icon="✅" tone="green" sub={t('jars.availableSub')} />
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="col-span-2 lg:col-span-4">
+              <StatCard label={t('jars.availableLabel')} value={s.available_jars} icon={CircleCheck} tone="green" sub={t('jars.availableSub')} />
             </div>
-            <StatCard label={t('jars.totalJars')} value={s.total_jars} icon="💧" tone="slate" />
-            <StatCard label={t('jars.withCustomers')} value={s.customer_jars} icon="🏠" tone="blue" to="/reports/jar-status" />
-            <StatCard label={t('jars.damagedStat')} value={s.damaged_jars} icon="⚠️" tone="red" />
-            <StatCard label={t('jars.lostStat')} value={s.lost_jars} icon="❓" tone="amber" />
+            <StatCard label={t('jars.totalJars')} value={s.total_jars} icon={Droplets} tone="slate" />
+            <StatCard label={t('jars.withCustomers')} value={s.customer_jars} icon={House} tone="blue" to="/reports/jar-status" />
+            <StatCard label={t('jars.damagedStat')} value={s.damaged_jars} icon={AlertTriangle} tone="red" />
+            <StatCard label={t('jars.lostStat')} value={s.lost_jars} icon={CircleHelp} tone="amber" />
           </div>
 
           {s.total_jars === 0 && (
-            <div className="rounded-2xl bg-amber-50 p-4 text-amber-900 ring-1 ring-amber-200">
-              {t('jars.startHint1')} <b>{t('jars.add')}</b> {t('jars.startHint2')}
+            <div className="flex items-start gap-3 rounded-xl bg-amber-50 p-4 text-sm text-amber-800 ring-1 ring-inset ring-amber-200">
+              <Info size={18} className="mt-0.5 shrink-0" />
+              <p className="leading-relaxed">
+                {t('jars.startHint1')} <b className="font-semibold">{t('jars.add')}</b> {t('jars.startHint2')}
+              </p>
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-2">
-            {Object.entries(ACTIONS).map(([k, a]) => (
-              <button key={k} className={`btn-light ${k === 'add' ? 'col-span-2 !bg-brand-700 !text-white' : ''}`} onClick={() => setAction(k)}>
-                {a.icon} {a.title}
-              </button>
-            ))}
-          </div>
+          {s.total_jars > 0 && (
+            <section className="card">
+              <h2 className="section-title mb-3">{t('jars.stockMix')}</h2>
+              <StackBar
+                total={Math.max(s.total_jars, 1)}
+                segments={[
+                  { label: t('jars.st.available'), value: Math.max(0, s.available_jars), color: '#10b981' },
+                  { label: t('jars.withCustomers'), value: s.customer_jars, color: '#3b6ff6' },
+                  { label: t('jars.damagedStat'), value: s.damaged_jars, color: '#ef4444' },
+                  { label: t('jars.lostStat'), value: s.lost_jars, color: '#94a3b8' },
+                ]}
+              />
+            </section>
+          )}
 
-          <Link to="/reports/jar-status" className="card flex items-center justify-between">
-            <span>{t('jars.whoHas')}</span>
-            <span className="text-brand-700">›</span>
+          <section className="space-y-3">
+            <h2 className="section-title">{t('jars.actions')}</h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              {Object.entries(ACTIONS).map(([k, a]) => (
+                <button
+                  key={k}
+                  className={`card card-hover flex items-center gap-3 !p-3 text-left text-sm font-medium active:scale-[.98] ${
+                    k === 'add' ? 'col-span-2 !bg-brand-600 !text-white !ring-brand-600 sm:col-span-3 lg:col-span-1' : 'text-ink'
+                  }`}
+                  onClick={() => setAction(k)}
+                >
+                  <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${k === 'add' ? 'bg-white/15 text-white' : a.tint}`}>
+                    <a.icon size={17} />
+                  </span>
+                  <span className="min-w-0 leading-snug">{a.title}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <Link to="/reports/jar-status" className="card card-hover flex items-center gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700">
+              <House size={18} />
+            </span>
+            <span className="flex-1 font-medium text-ink">{t('jars.whoHasLbl')}</span>
+            <ChevronRight size={18} className="text-muted" />
           </Link>
 
           {tracking ? (
-            <section className="card">
-              <h2 className="mb-2 font-semibold">{t('jars.numbers')}</h2>
-              <div className="no-scrollbar -mx-4 mb-3 flex gap-2 overflow-x-auto px-4">
+            <section className="card space-y-3">
+              <h2 className="font-semibold text-ink">{t('jars.numbers')}</h2>
+              <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
                 {['', ...STATUSES].map((st) => (
                   <button key={st} className={`chip ${statusFilter === st ? 'chip-active' : ''}`} onClick={() => setStatusFilter(st)}>
                     {st ? STATUS_LABELS[st] : t('jars.all')}
                   </button>
                 ))}
               </div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                 {data.jars.data.map((j) => (
-                  <button key={j.id} className="rounded-xl bg-slate-50 p-2.5 text-left ring-1 ring-slate-200" onClick={() => setEditJar({ ...j })}>
-                    <div className="font-mono font-semibold">{j.jar_number}</div>
+                  <button
+                    key={j.id}
+                    className="flex flex-col items-start gap-1.5 rounded-lg bg-surface-2 p-2.5 text-left ring-1 ring-inset ring-line transition hover:ring-line-strong active:scale-[.98]"
+                    onClick={() => setEditJar({ ...j })}
+                  >
+                    <span className="font-mono text-sm font-semibold text-ink">{j.jar_number}</span>
                     <Badge kind={j.status} />
-                    {j.customer_name && <div className="mt-1 truncate text-xs text-slate-500">{j.customer_name}</div>}
+                    {j.customer_name && (
+                      <span className="flex w-full min-w-0 items-center gap-1 text-xs text-muted">
+                        <UserRound size={12} className="shrink-0" />
+                        <span className="truncate">{j.customer_name}</span>
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
-              {data.jars.last_page > 1 && <p className="mt-2 text-xs text-slate-500">{t('jars.showingFirst', { n: data.jars.data.length, total: data.jars.total })}</p>}
+              {data.jars.last_page > 1 && <p className="text-xs text-muted">{t('jars.showingFirst', { n: data.jars.data.length, total: data.jars.total })}</p>}
             </section>
           ) : (
-            <p className="text-center text-sm text-slate-500">
-              {t('jars.countHint1')} <Link to="/settings" className="font-semibold text-brand-700">{t('jars.countHintLink')}</Link> {t('jars.countHint2')}
+            <p className="text-center text-sm text-muted">
+              {t('jars.countHint1')}{' '}
+              <Link to="/settings" className="font-semibold text-brand-700 hover:underline">
+                {t('jars.countHintLink')}
+              </Link>{' '}
+              {t('jars.countHint2')}
             </p>
           )}
         </>
@@ -144,6 +192,7 @@ export default function Jars() {
               </Field>
             )}
             <button className={`${ACTIONS[action].btn} w-full`} disabled={busy} onClick={runAction}>
+              {!busy && <Save size={18} />}
               {busy ? t('entry.saving') : t('entry.save')}
             </button>
           </div>
@@ -168,6 +217,7 @@ export default function Jars() {
               </Field>
             )}
             <button className="btn-primary w-full" disabled={busy} onClick={saveJar}>
+              {!busy && <Save size={18} />}
               {busy ? t('entry.saving') : t('entry.save')}
             </button>
           </div>

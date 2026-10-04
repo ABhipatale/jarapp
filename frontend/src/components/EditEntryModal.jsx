@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Banknote, CheckCircle2, Landmark, NotebookPen, Smartphone, UserRound } from 'lucide-react';
 import api, { errorMessage } from '../api/client';
 import { useUi } from '../context/UiContext';
 import { t } from '../i18n';
@@ -91,33 +92,37 @@ export default function EditEntryModal({ kind, id, onClose, onSaved }) {
   const title = kind === 'payment' ? t('edit.titlePayment') : isGive ? t('edit.titleGive') : t('edit.titleReturn');
 
   return (
-    <Modal title={rec ? title : t('edit.title')} onClose={onClose}>
+    <Modal title={rec ? title : t('edit.title')} description={rec ? t('edit.fixedHint') : undefined} onClose={onClose}>
       {!form ? (
         <Loader />
       ) : (
         <div className="space-y-4">
-          <div className="rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-600">
-            👤 <b className="text-slate-800">{rec.customer_name}</b>
-            <span className="block text-xs">{t('edit.fixedHint')}</span>
+          <div className="flex items-center gap-3 rounded-lg bg-surface-2 px-3 py-2.5 ring-1 ring-inset ring-line">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-50 text-brand-700">
+              <UserRound size={18} />
+            </span>
+            <span className="min-w-0 truncate font-medium text-ink">{rec.customer_name}</span>
           </div>
 
           {kind === 'jar' ? (
             <>
-              <Field label={t('edit.date')}>
-                <input type="date" className="input" value={form.transaction_date} max={today()} onChange={set('transaction_date')} />
-              </Field>
-              <Field group label={isGive ? t('edit.jarsGiven') : t('edit.jarsReturned')}>
-                <Stepper value={form.jar_quantity} onChange={(v) => set('jar_quantity')(String(v))} min={1} />
-              </Field>
+              <div className="space-y-4">
+                <Field label={t('edit.date')}>
+                  <input type="date" className="input" value={form.transaction_date} max={today()} onChange={set('transaction_date')} />
+                </Field>
+                <Field group label={isGive ? t('edit.jarsGiven') : t('edit.jarsReturned')}>
+                  <Stepper value={form.jar_quantity} onChange={(v) => set('jar_quantity')(String(v))} min={1} />
+                </Field>
+              </div>
 
               {isGive && (
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     <Field label={t('edit.rate')}>
-                      <input className="input" inputMode="decimal" value={form.rate} onChange={(e) => set('rate')(money2(e.target.value))} />
+                      <input className="input tabular-nums" inputMode="decimal" value={form.rate} onChange={(e) => set('rate')(money2(e.target.value))} />
                     </Field>
                     <Field group label={t('edit.amount')}>
-                      <div className="input bg-slate-50 font-bold">{money(amount)}</div>
+                      <div className="input !bg-surface-2 font-semibold tabular-nums">{money(amount)}</div>
                     </Field>
                   </div>
                   <Segmented
@@ -125,14 +130,14 @@ export default function EditEntryModal({ kind, id, onClose, onSaved }) {
                     value={form.payment_type}
                     onChange={set('payment_type')}
                     options={[
-                      { value: 'cash', label: t('edit.cash'), activeClass: 'bg-emerald-600 text-white ring-emerald-600' },
-                      { value: 'udhari', label: t('edit.udhari'), activeClass: 'bg-amber-500 text-white ring-amber-500' },
+                      { value: 'cash', label: t('edit.cash'), icon: Banknote, activeClass: 'bg-emerald-600 text-white shadow-soft' },
+                      { value: 'udhari', label: t('edit.udhari'), icon: NotebookPen, activeClass: 'bg-amber-500 text-white shadow-soft' },
                     ]}
                   />
                   <div className="grid grid-cols-2 gap-3">
                     <Field label={t('edit.paid')}>
                       <input
-                        className="input"
+                        className="input tabular-nums"
                         inputMode="decimal"
                         disabled={form.payment_type === 'cash'}
                         value={form.payment_type === 'cash' ? amount : form.paid}
@@ -141,11 +146,11 @@ export default function EditEntryModal({ kind, id, onClose, onSaved }) {
                       />
                     </Field>
                     <Field group label={t('edit.udhariAuto')}>
-                      <div className={`input font-bold ${amount - paid > 0 ? 'bg-amber-50 text-amber-800' : 'bg-slate-50'}`}>{money(round2(amount - paid))}</div>
+                      <div className={`input font-semibold tabular-nums ${amount - paid > 0 ? '!border-amber-300 !bg-amber-50 text-amber-800' : '!bg-surface-2'}`}>{money(round2(amount - paid))}</div>
                     </Field>
                   </div>
                   <Field label={t('edit.advance')}>
-                    <input className="input" inputMode="decimal" value={form.advance} placeholder="0" onChange={(e) => set('advance')(money2(e.target.value))} />
+                    <input className="input tabular-nums" inputMode="decimal" value={form.advance} placeholder="0" onChange={(e) => set('advance')(money2(e.target.value))} />
                   </Field>
                 </>
               )}
@@ -156,19 +161,19 @@ export default function EditEntryModal({ kind, id, onClose, onSaved }) {
                 <input type="date" className="input" value={form.payment_date} max={today()} onChange={set('payment_date')} />
               </Field>
               <Field label={t('edit.paymentAmount')}>
-                <input className="input text-xl font-bold" inputMode="decimal" value={form.amount} onChange={(e) => set('amount')(money2(e.target.value))} />
+                <input className="input text-xl font-semibold tabular-nums" inputMode="decimal" value={form.amount} onChange={(e) => set('amount')(money2(e.target.value))} />
               </Field>
               <Segmented
                 size="sm"
                 value={form.payment_mode}
                 onChange={set('payment_mode')}
                 options={[
-                  { value: 'cash', label: t('edit.cash') },
-                  { value: 'upi', label: 'UPI' },
-                  { value: 'bank', label: t('edit.bank') },
+                  { value: 'cash', label: t('edit.cash'), icon: Banknote },
+                  { value: 'upi', label: 'UPI', icon: Smartphone },
+                  { value: 'bank', label: t('edit.bank'), icon: Landmark },
                 ]}
               />
-              <label className="flex items-center gap-3 text-sm text-slate-700">
+              <label className="flex cursor-pointer items-center gap-3 rounded-lg bg-teal-50 px-3 py-2.5 text-sm font-medium text-teal-800 ring-1 ring-inset ring-teal-600/20">
                 <input type="checkbox" className="h-5 w-5 accent-teal-700" checked={form.is_advance} onChange={(e) => set('is_advance')(e.target.checked)} />
                 {t('edit.isAdvance')}
               </label>
@@ -179,11 +184,12 @@ export default function EditEntryModal({ kind, id, onClose, onSaved }) {
             <input className="input" value={form.notes} onChange={set('notes')} maxLength={500} />
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 border-t border-line pt-4">
             <button type="button" className="btn-light" onClick={onClose}>
               {t('edit.cancel')}
             </button>
             <button type="button" className="btn-primary" disabled={busy} onClick={save}>
+              {!busy && <CheckCircle2 size={18} />}
               {busy ? t('edit.saving') : t('edit.save')}
             </button>
           </div>

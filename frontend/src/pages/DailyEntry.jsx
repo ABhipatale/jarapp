@@ -1,8 +1,30 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  AlertTriangle,
+  ArrowDownLeft,
+  ArrowRight,
+  ArrowUpRight,
+  Banknote,
+  Bell,
+  CalendarClock,
+  CheckCircle2,
+  CloudOff,
+  Droplets,
+  MessageCircle,
+  NotebookPen,
+  Plus,
+  Receipt,
+  RotateCcw,
+  Store,
+  UserRound,
+  Users,
+  Wallet,
+  X,
+} from 'lucide-react';
 import api, { errorMessage } from '../api/client';
 import CustomerPicker from '../components/CustomerPicker';
-import { Field, PageHeader, Segmented, Stepper } from '../components/ui';
+import { Field, Icon, PageHeader, Segmented, Stepper } from '../components/ui';
 import { useSettings } from '../context/SettingsContext';
 import { useUi } from '../context/UiContext';
 import { t } from '../i18n';
@@ -21,7 +43,7 @@ export default function DailyEntry() {
     const stock = /उपलब्ध|स्टॉकमध्ये जार नाहीत|available in the shop|No jars in stock/i.test(message);
     const goAddJars = await alert({
       title: stock ? t('entry.notEnoughJars') : t('entry.cannotSave'),
-      icon: stock ? '💧' : '⚠️',
+      icon: stock ? <Droplets size={22} className="text-amber-700" /> : <AlertTriangle size={22} className="text-amber-700" />,
       message,
       actionText: stock ? t('entry.addJars') : undefined,
     });
@@ -149,91 +171,129 @@ export default function DailyEntry() {
 
   if (result) return <SavedCard result={result} settings={settings} onNew={newEntry} />;
 
+  const isGive = type === 'given';
+  const short = isGive && stockForGive !== null && q > stockForGive;
+
   return (
-    <form onSubmit={save} className="space-y-4">
+    <form onSubmit={save} className="mx-auto max-w-2xl space-y-5">
       <PageHeader title={t('entry.title')} />
 
-      {bookingId && type === 'given' && (
-        <div className="rounded-2xl bg-violet-50 px-4 py-2.5 text-sm font-semibold text-violet-900 ring-1 ring-violet-200">{t('book.deliveringBanner')}</div>
+      {bookingId && isGive && (
+        <Callout tone="violet" icon={CalendarClock}>
+          {t('entry.bookingBanner')}
+        </Callout>
       )}
 
       <Segmented
         value={type}
         onChange={setType}
         options={[
-          { value: 'given', label: t('entry.give'), activeClass: 'bg-brand-700 text-white ring-brand-700' },
-          { value: 'returned', label: t('entry.return'), activeClass: 'bg-sky-600 text-white ring-sky-600' },
+          { value: 'given', label: t('entry.giveLbl'), icon: ArrowUpRight, activeClass: 'bg-brand-600 text-white shadow-soft' },
+          { value: 'returned', label: t('entry.returnLbl'), icon: ArrowDownLeft, activeClass: 'bg-sky-600 text-white shadow-soft' },
         ]}
       />
 
-      <div className="card space-y-4">
-        <Field label={t('entry.date')}>
-          <input type="date" className="input" value={date} max={today()} onChange={(e) => setDate(e.target.value)} />
-        </Field>
-        <Field group label={t('entry.customer')}>
-          <CustomerPicker
-            value={customerId}
-            onChange={(id, c) => {
-              setCustomerId(id || '');
-              setCustomer(c);
-            }}
-          />
-        </Field>
+      <Section title={t('entry.secCustomer')} icon={Users}>
+        <div className="grid gap-4 sm:grid-cols-[1fr_11rem]">
+          <Field group label={t('entry.customer')}>
+            <CustomerPicker
+              value={customerId}
+              onChange={(id, c) => {
+                setCustomerId(id || '');
+                setCustomer(c);
+              }}
+            />
+          </Field>
+          <Field label={t('entry.date')}>
+            <input type="date" className="input" value={date} max={today()} onChange={(e) => setDate(e.target.value)} />
+          </Field>
+        </div>
         {customer && (
           <Field label={t('entry.mobile')}>
-            <input className="input" value={customer.mobile} disabled />
+            <input className="input tabular-nums" value={customer.mobile} disabled />
           </Field>
         )}
-        <Field group label={type === 'given' ? t('entry.howManyGiven') : t('entry.howManyReturned')}>
+        <Field group label={isGive ? t('entry.howManyGiven') : t('entry.howManyReturned')}>
           <Stepper value={qty} onChange={(v) => setQty(String(v))} min={1} max={type === 'returned' && customer && jarsNow > 0 ? jarsNow : undefined} />
         </Field>
-        {type === 'given' && customer && jarsNow > 0 && !takeBack && (
-          <button type="button" onClick={openTakeBack} className="w-full rounded-xl border-2 border-dashed border-sky-300 bg-sky-50 px-3 py-2.5 text-left text-sm font-semibold text-sky-800 active:bg-sky-100">
-            {t('entry.takeBackBtn')} <span className="font-normal text-sky-700">· {t('entry.takeBackHint', { n: jarsNow })}</span>
+
+        {isGive && customer && jarsNow > 0 && !takeBack && (
+          <button
+            type="button"
+            onClick={openTakeBack}
+            className="flex w-full items-center gap-3 rounded-lg border border-dashed border-sky-300 bg-sky-50 px-3 py-2.5 text-left transition hover:border-sky-400 active:scale-[.99]"
+          >
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-surface text-sky-700 ring-1 ring-sky-200">
+              <RotateCcw size={16} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-sky-800">{t('entry.takeBackQ')}</span>
+              <span className="block text-xs text-sky-700">{t('entry.takeBackHint', { n: jarsNow })}</span>
+            </span>
+            <Plus size={18} className="shrink-0 text-sky-700" />
           </button>
         )}
-        {type === 'given' && takeBack && (
-          <div className="space-y-2 rounded-2xl bg-sky-50 p-3 ring-1 ring-sky-200">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-sky-900">{t('entry.takeBackLabel')}</span>
-              <button type="button" className="text-sm font-semibold text-slate-500 underline" onClick={() => { setTakeBack(false); setRetQty(''); }}>
-                {t('entry.takeBackRemove')}
+        {isGive && takeBack && (
+          <div className="space-y-3 rounded-lg bg-sky-50 p-3 ring-1 ring-inset ring-sky-200">
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-2 text-sm font-semibold text-sky-800">
+                <RotateCcw size={16} /> {t('entry.takeBackLabel')}
+              </span>
+              <button
+                type="button"
+                className="btn-ghost btn-sm !px-2 text-muted"
+                onClick={() => {
+                  setTakeBack(false);
+                  setRetQty('');
+                }}
+              >
+                <X size={14} /> {t('entry.takeBackRemove')}
               </button>
             </div>
             <Stepper value={retQty} onChange={(v) => setRetQty(String(v))} min={0} max={jarsNow} />
             <div className="flex flex-wrap gap-2">
-              <button type="button" className="chip" onClick={() => setRetQty(String(Math.min(q, jarsNow)))}>{t('entry.takeBackSame', { n: Math.min(q, jarsNow) })}</button>
-              <button type="button" className="chip" onClick={() => setRetQty(String(jarsNow))}>{t('entry.takeBackAll', { n: jarsNow })}</button>
+              <button type="button" className="chip" onClick={() => setRetQty(String(Math.min(q, jarsNow)))}>
+                {t('entry.takeBackSame', { n: Math.min(q, jarsNow) })}
+              </button>
+              <button type="button" className="chip" onClick={() => setRetQty(String(jarsNow))}>
+                {t('entry.takeBackAll', { n: jarsNow })}
+              </button>
             </div>
             <p className="text-xs text-sky-800">{t('entry.takeBackHint', { n: jarsNow })}</p>
           </div>
         )}
-        {customer && (
-          <p className={`rounded-xl px-3 py-2 text-sm ${jarsAfter < 0 ? 'bg-red-50 text-red-700' : 'bg-slate-50 text-slate-700'}`}>
-            {t('entry.currentJars')} <b>{jarsNow}</b> → {t('entry.afterEntry')} <b>{jarsAfter}</b>
-          </p>
-        )}
-        {type === 'given' && stockForGive !== null && (
-          <p className={`rounded-xl px-3 py-2 text-sm ${q > stockForGive ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-800'}`}>
-            {t('entry.availableInShop')} <b>{stockForGive}</b> {t('entry.jarsWord')}
-            {q > stockForGive && (
-              <>
-                {' '}
-                — <Link to="/jars" className="font-semibold underline">{t('entry.addJars')}</Link>
-              </>
-            )}
-          </p>
-        )}
-      </div>
 
-      {type === 'given' && (
-        <div className="card space-y-4">
+        {(customer || (isGive && stockForGive !== null)) && (
+          <div className="space-y-2">
+            {customer && (
+              <Callout tone={jarsAfter < 0 ? 'red' : 'neutral'} icon={UserRound}>
+                {t('entry.currentJars')} <b className="tabular-nums">{jarsNow}</b>
+                <ArrowRight size={14} className="mx-1.5 inline opacity-60" />
+                {t('entry.afterEntry')} <b className="tabular-nums">{jarsAfter}</b>
+              </Callout>
+            )}
+            {isGive && stockForGive !== null && (
+              <Callout tone={short ? 'red' : 'green'} icon={Store}>
+                {t('entry.inShop')} <b className="tabular-nums">{stockForGive}</b> {t('entry.jarsWord')}
+                {short && (
+                  <Link to="/jars" className="ml-2 inline-flex items-center gap-1 font-semibold underline underline-offset-2">
+                    <Plus size={14} /> {t('entry.addJars')}
+                  </Link>
+                )}
+              </Callout>
+            )}
+          </div>
+        )}
+      </Section>
+
+      {isGive && (
+        <Section title={t('entry.secBilling')} icon={Receipt}>
           <div className="grid grid-cols-2 gap-3">
             <Field label={t('entry.rate')}>
-              <input className="input" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value.replace(/[^\d.]/g, ''))} />
+              <input className="input tabular-nums" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value.replace(/[^\d.]/g, ''))} />
             </Field>
             <Field group label={t('entry.amount')}>
-              <div className="input bg-slate-50 font-bold">{money(amount)}</div>
+              <div className="input !bg-surface-2 font-semibold tabular-nums">{money(amount)}</div>
             </Field>
           </div>
 
@@ -243,8 +303,8 @@ export default function DailyEntry() {
               value={payType}
               onChange={setPayType}
               options={[
-                { value: 'cash', label: t('entry.payCash'), activeClass: 'bg-emerald-600 text-white ring-emerald-600' },
-                { value: 'udhari', label: t('entry.payUdhari'), activeClass: 'bg-amber-500 text-white ring-amber-500' },
+                { value: 'cash', label: t('entry.modeCash'), icon: Banknote, activeClass: 'bg-emerald-600 text-white shadow-soft' },
+                { value: 'udhari', label: t('entry.udhari'), icon: NotebookPen, activeClass: 'bg-amber-500 text-white shadow-soft' },
               ]}
             />
           </Field>
@@ -252,7 +312,7 @@ export default function DailyEntry() {
           <div className="grid grid-cols-2 gap-3">
             <Field label={t('entry.paidAmount')} hint={payType === 'udhari' ? t('entry.partPaid') : t('entry.fullPaid')}>
               <input
-                className="input"
+                className="input tabular-nums"
                 inputMode="decimal"
                 disabled={payType === 'cash'}
                 value={payType === 'cash' ? amount : paidInput}
@@ -261,19 +321,18 @@ export default function DailyEntry() {
               />
             </Field>
             <Field group label={t('entry.udhariAuto')}>
-              <div className={`input font-bold ${udhari > 0 ? 'bg-amber-50 text-amber-800' : 'bg-slate-50'}`}>{money(udhari)}</div>
+              <div className={`input font-semibold tabular-nums ${udhari > 0 ? '!border-amber-300 !bg-amber-50 text-amber-800' : '!bg-surface-2'}`}>{money(udhari)}</div>
             </Field>
           </div>
 
           <Field label={t('entry.advanceMoney')} hint={t('entry.advanceHint')}>
-            <input className="input" inputMode="decimal" value={advance} placeholder="0" onChange={(e) => setAdvance(e.target.value.replace(/[^\d.]/g, ''))} />
+            <input className="input tabular-nums" inputMode="decimal" value={advance} placeholder="0" onChange={(e) => setAdvance(e.target.value.replace(/[^\d.]/g, ''))} />
           </Field>
-        </div>
+        </Section>
       )}
 
-      {type === 'given' && (
-        <div className="card space-y-2">
-          <div className="text-sm font-medium text-slate-600">{t('entry.reminder')}</div>
+      {isGive && (
+        <Section title={t('entry.secReminder')} icon={Bell}>
           <div className="flex flex-wrap gap-2">
             {[
               [0, t('entry.reminderNone')],
@@ -286,23 +345,56 @@ export default function DailyEntry() {
               </button>
             ))}
           </div>
-          {reminderDays > 0 && <p className="text-xs text-slate-500">{t('entry.reminderHint', { date: fmtDate(addDays(date, reminderDays)) })}</p>}
-        </div>
+          {reminderDays > 0 && (
+            <p className="flex items-center gap-1.5 text-xs text-muted">
+              <CalendarClock size={14} className="shrink-0" />
+              {t('entry.reminderHint', { date: fmtDate(addDays(date, reminderDays)) })}
+            </p>
+          )}
+        </Section>
       )}
 
-      <div className="card">
-        <Field label={t('entry.notes')}>
-          <input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} placeholder={t('entry.optional')} />
-        </Field>
-      </div>
-
+      <Section title={t('entry.notes')} icon={NotebookPen}>
+        <input className="input" aria-label={t('entry.notes')} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} placeholder={t('entry.optional')} />
+      </Section>
 
       <div className="no-print sticky-above-nav sticky z-20">
-        <button className={`${type === 'given' ? 'btn-primary' : 'btn bg-sky-600 text-white'} w-full py-4 text-lg shadow-lg`} disabled={busy}>
-          {busy ? t('entry.saving') : r > 0 ? t('entry.saveGiveReturn', { q, r }) : t(type === 'given' ? 'entry.saveGive' : 'entry.saveReturn', { q })}
+        <button className={`${isGive ? 'btn-primary' : 'btn bg-sky-600 text-white hover:bg-sky-700'} w-full py-4 text-base shadow-pop ring-4 ring-app`} disabled={busy}>
+          {!busy && <CheckCircle2 size={20} />}
+          {busy ? t('entry.saving') : r > 0 ? t('entry.saveGiveReturn', { q, r }) : t(isGive ? 'entry.saveGive' : 'entry.saveReturn', { q })}
         </button>
       </div>
     </form>
+  );
+}
+
+const CALLOUT_TONES = {
+  neutral: 'bg-surface-2 text-slate-700 ring-line',
+  red: 'bg-red-50 text-red-700 ring-red-200',
+  green: 'bg-emerald-50 text-emerald-800 ring-emerald-200',
+  violet: 'bg-violet-50 text-violet-800 ring-violet-200',
+};
+
+/** Subtle inline info line with an icon. */
+function Callout({ tone = 'neutral', icon, children }) {
+  return (
+    <div className={`flex items-start gap-2.5 rounded-lg px-3 py-2.5 text-sm ring-1 ring-inset ${CALLOUT_TONES[tone]}`}>
+      <Icon icon={icon} size={16} className="mt-0.5 shrink-0 opacity-80" />
+      <div className="min-w-0 flex-1 leading-relaxed">{children}</div>
+    </div>
+  );
+}
+
+/** Form card with a small uppercase section title. */
+function Section({ title, icon, children }) {
+  return (
+    <section className="card space-y-4">
+      <h2 className="section-title flex items-center gap-2">
+        <Icon icon={icon} size={15} />
+        {title}
+      </h2>
+      {children}
+    </section>
   );
 }
 
@@ -315,62 +407,93 @@ function SavedCard({ result, settings, onNew }) {
   };
 
   return (
-    <div className="space-y-4">
-      <div className={`card text-center ${result.queued ? 'ring-amber-300' : 'ring-emerald-300'}`}>
-        <div className="text-5xl">{result.queued ? '📴' : '✅'}</div>
-        <h1 className="mt-2 text-xl font-bold">{result.queued ? t('entry.savedOnPhone') : t('entry.savedOk')}</h1>
-        {result.queued && <p className="text-sm text-slate-600">{t('entry.willSync')}</p>}
+    <div className="mx-auto max-w-2xl space-y-4">
+      <div className="card animate-pop-in overflow-hidden !p-0">
+        <div className={`flex items-center gap-3 px-4 py-4 ${result.queued ? 'bg-amber-50' : 'bg-emerald-50'}`}>
+          <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-full bg-surface ring-1 ${result.queued ? 'text-amber-700 ring-amber-200' : 'text-emerald-700 ring-emerald-200'}`}>
+            {result.queued ? <CloudOff size={22} /> : <CheckCircle2 size={22} />}
+          </span>
+          <div className="min-w-0">
+            <h1 className="text-lg font-semibold text-ink">{result.queued ? t('entry.savedOnPhone') : t('entry.savedOk')}</h1>
+            <p className="truncate text-sm text-muted">
+              {result.customer_name} · {fmtDate(result.transaction_date)}
+            </p>
+            {result.queued && <p className="text-sm text-amber-800">{t('entry.willSync')}</p>}
+          </div>
+        </div>
 
-        <div className="mt-4 space-y-1.5 rounded-2xl bg-slate-50 p-4 text-left">
+        <dl className="divide-y divide-line px-4 text-sm">
           <Row label={t('entry.customer')} value={result.customer_name} />
           <Row label={isGive ? t('entry.given') : t('entry.returned')} value={t('entry.jarsN', { n: result.jar_quantity })} />
           {isGive && result.returned_quantity > 0 && <Row label={t('entry.takenBack')} value={t('entry.jarsN', { n: result.returned_quantity })} />}
           {result.booking_done && <Row label={t('book.title')} value={t('book.deliveredRow')} />}
-          {isGive && result.reminder_days > 0 && <Row label={t('entry.reminderRow')} value={`🔔 ${fmtDate(addDays(result.transaction_date, result.reminder_days))}`} />}
-          {!result.queued && (
+          {isGive && result.reminder_days > 0 && (
+            <Row
+              label={t('entry.reminderRow')}
+              value={
+                <span className="inline-flex items-center gap-1.5">
+                  <Bell size={14} className="text-muted" /> {fmtDate(addDays(result.transaction_date, result.reminder_days))}
+                </span>
+              }
+            />
+          )}
+          {!result.queued && isGive && (
             <>
-              {isGive && (
-                <>
-                  <Row label={t('entry.rateShort')} value={money(result.rate)} />
-                  <Row label={t('entry.total')} value={money(result.amount)} />
-                  <Row label={t('entry.paid')} value={money(result.paid_amount + result.advance_amount)} />
-                  <Row label={t('entry.udhari')} value={money(result.udhari_amount)} />
-                </>
-              )}
-              <Row label={t('entry.currentJarsRow')} value={result.current_jars} strong />
-              <Row label={t('entry.totalPending')} value={money(result.pending_amount)} strong />
+              <Row label={t('entry.rateShort')} value={money(result.rate)} />
+              <Row label={t('entry.total')} value={money(result.amount)} />
+              <Row label={t('entry.paid')} value={<span className="text-emerald-700">{money(result.paid_amount + result.advance_amount)}</span>} />
+              <Row label={t('entry.udhari')} value={<span className={result.udhari_amount > 0 ? 'text-amber-800' : ''}>{money(result.udhari_amount)}</span>} />
             </>
           )}
-        </div>
+        </dl>
+
+        {!result.queued && (
+          <div className="grid grid-cols-2 gap-3 border-t border-line bg-surface-2 p-4">
+            <Tile icon={Droplets} label={t('entry.currentJarsRow')} value={result.current_jars} />
+            <Tile icon={Wallet} label={t('entry.totalPending')} value={money(result.pending_amount)} danger={result.pending_amount > 0} />
+          </div>
+        )}
       </div>
 
       {!result.queued && (
-        <button className="btn-wa w-full py-4 text-lg" onClick={sendWa}>
-          {t('entry.sendWa')}
+        <button className="btn-wa w-full py-3.5 text-base" onClick={sendWa}>
+          <MessageCircle size={20} /> {t('entry.sendWaLbl')}
         </button>
       )}
       <div className="grid grid-cols-2 gap-3">
         <button className="btn-primary" onClick={() => onNew(false)}>
-          {t('entry.newEntry')}
+          <Plus size={18} /> {t('entry.newEntry')}
         </button>
         <button className="btn-light" onClick={() => onNew(true)}>
-          {t('entry.sameCustomer')}
+          <UserRound size={18} /> {t('entry.sameCustomer')}
         </button>
       </div>
       {!result.queued && (
         <Link to={`/payments/new?customer=${result.customer_id}`} className="btn-light w-full">
-          {t('entry.receivePayment')}
+          <Wallet size={18} /> {t('entry.receivePayLbl')}
         </Link>
       )}
     </div>
   );
 }
 
-function Row({ label, value, strong }) {
+function Tile({ icon, label, value, danger }) {
   return (
-    <div className="flex justify-between">
-      <span className="text-slate-500">{label}</span>
-      <span className={strong ? 'font-bold' : 'font-medium'}>{value}</span>
+    <div className="rounded-lg bg-surface p-3 ring-1 ring-line">
+      <div className="flex items-center gap-1.5 text-xs font-medium text-muted">
+        <Icon icon={icon} size={14} /> {label}
+      </div>
+      <div className={`mt-1 text-xl font-semibold tabular-nums ${danger ? 'text-red-600' : 'text-ink'}`}>{value}</div>
     </div>
   );
 }
+
+function Row({ label, value }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2.5">
+      <dt className="text-muted">{label}</dt>
+      <dd className="text-right font-medium text-ink tabular-nums">{value}</dd>
+    </div>
+  );
+}
+
