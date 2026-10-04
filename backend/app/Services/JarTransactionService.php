@@ -92,27 +92,7 @@ class JarTransactionService
                         ]);
                     }
 
-                    $rate = round((float) ($data['rate'] ?? 0), 2);
-                    $amount = round($qty * $rate, 2);
-                    $paymentType = $data['payment_type'] ?? 'cash';
-                    $paid = array_key_exists('paid_amount', $data) && $data['paid_amount'] !== null
-                        ? round((float) $data['paid_amount'], 2)
-                        : ($paymentType === 'cash' ? $amount : 0);
-
-                    if ($paid > $amount) {
-                        throw ValidationException::withMessages([
-                            'paid_amount' => __('भरलेली रक्कम बिलापेक्षा जास्त असू शकत नाही. जास्तीची रक्कम आगाऊ म्हणून टाका.'),
-                        ]);
-                    }
-
-                    $row += [
-                        'payment_type' => $paid >= $amount ? 'cash' : 'udhari',
-                        'rate' => $rate,
-                        'amount' => $amount,
-                        'paid_amount' => $paid,
-                        'udhari_amount' => round($amount - $paid, 2),
-                        'advance_amount' => round((float) ($data['advance_amount'] ?? 0), 2),
-                    ];
+                    $row += $this->giveMoney($qty, $data);
                 }
 
                 $tx = JarTransaction::create($row);
@@ -129,6 +109,93 @@ class JarTransactionService
 
             return [$existing, false, $this->balances->forCustomer($existing->customer_id), 0];
         }
+    }
+
+    /**
+     * Correct a saved entry (wrong amount, udhari instead of cash, wrong date/quantity…).
+     * Customer and type stay fixed: delete and re-enter for those. Money is recalculated
+     * exactly like a new entry, and the same jar/stock rules apply to the change.
+     *
+     * @return array{0: JarTransaction, 1: array}
+     */
+    public function update(JarTransaction $tx, array $data): array
+    {
+        return DB::transaction(function () use ($tx, $data) {
+            Customer::withTrashed()->whereKey($tx->customer_id)->lockForUpdate()->first();
+            $tx->refresh();
+            Jar::query()->lockForUpdate()->pluck('id');
+
+            $qty = (int) $data['jar_quantity'];
+            $oldQty = (int) $tx->jar_quantity;
+            $jarsNow = $this->balances->forCustomer($tx->customer_id)['current_jars'];
+            $available = $this->jars->summary()['available_jars'];
+
+            $row = [
+                'transaction_date' => $data['transaction_date'],
+                'jar_quantity' => $qty,
+                'notes' => $data['notes'] ?? null,
+            ];
+
+            if ($tx->transaction_type === JarTransaction::RETURNED) {
+                // Without this entry the customer would hold $jarsNow + $oldQty jars.
+                $holding = $jarsNow + $oldQty;
+                if ($qty > $holding) {
+                    throw ValidationException::withMessages([
+                        'jar_quantity' => __('ग्राहकाकडे फक्त :jars जार आहेत. :qty जार परत घेता येणार नाहीत.', ['jars' => $holding, 'qty' => $qty]),
+                    ]);
+                }
+                // Fewer jars returned means those jars stay with the customer: they must exist in the shop.
+                if ($oldQty - $qty > $available) {
+                    throw ValidationException::withMessages([
+                        'jar_quantity' => __('दुकानात फक्त :available जार उपलब्ध आहेत. :qty जार देता येणार नाहीत.', ['available' => $available, 'qty' => $oldQty - $qty]),
+                    ]);
+                }
+            } else {
+                $diff = $qty - $oldQty;
+                if ($diff > 0 && $diff > $available) {
+                    throw ValidationException::withMessages([
+                        'jar_quantity' => __('दुकानात फक्त :available जार उपलब्ध आहेत. :qty जार देता येणार नाहीत.', ['available' => $available, 'qty' => $diff]),
+                    ]);
+                }
+                if ($diff < 0 && $jarsNow + $diff < 0) {
+                    throw ValidationException::withMessages([
+                        'jar_quantity' => __('ग्राहकाने यातील काही जार आधीच परत केले आहेत. दिलेले जार :min पेक्षा कमी करता येणार नाहीत.', ['min' => $oldQty - $jarsNow]),
+                    ]);
+                }
+                $row += $this->giveMoney($qty, $data);
+            }
+
+            $tx->update($row);
+            $this->ledger->rebuild($tx->customer_id);
+
+            return [$tx->fresh(), $this->balances->forCustomer($tx->customer_id)];
+        });
+    }
+
+    /** Bill for a GIVE entry: amount = qty × rate, udhari = amount − paid. Validates paid ≤ amount. */
+    private function giveMoney(int $qty, array $data): array
+    {
+        $rate = round((float) ($data['rate'] ?? 0), 2);
+        $amount = round($qty * $rate, 2);
+        $paymentType = $data['payment_type'] ?? 'cash';
+        $paid = array_key_exists('paid_amount', $data) && $data['paid_amount'] !== null
+            ? round((float) $data['paid_amount'], 2)
+            : ($paymentType === 'cash' ? $amount : 0);
+
+        if ($paid > $amount) {
+            throw ValidationException::withMessages([
+                'paid_amount' => __('भरलेली रक्कम बिलापेक्षा जास्त असू शकत नाही. जास्तीची रक्कम आगाऊ म्हणून टाका.'),
+            ]);
+        }
+
+        return [
+            'payment_type' => $paid >= $amount ? 'cash' : 'udhari',
+            'rate' => $rate,
+            'amount' => $amount,
+            'paid_amount' => $paid,
+            'udhari_amount' => round($amount - $paid, 2),
+            'advance_amount' => round((float) ($data['advance_amount'] ?? 0), 2),
+        ];
     }
 
     public function delete(JarTransaction $tx): void

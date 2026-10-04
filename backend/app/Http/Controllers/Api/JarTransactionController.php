@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\JarTransactionRequest;
+use App\Http\Requests\UpdateJarTransactionRequest;
 use App\Models\JarTransaction;
 use App\Services\JarTransactionService;
 use Illuminate\Http\Request;
@@ -54,6 +55,25 @@ class JarTransactionController extends Controller
                 'returned_quantity' => $returned,
             ],
         ], $created ? 201 : 200);
+    }
+
+    public function show(JarTransaction $jarTransaction)
+    {
+        return response()->json(['data' => $this->present($jarTransaction->load('customer:id,name,mobile'))]);
+    }
+
+    public function update(UpdateJarTransactionRequest $request, JarTransaction $jarTransaction)
+    {
+        [$tx, $balance] = $this->service->update($jarTransaction, $request->validated());
+        $tx->load('customer:id,name,mobile');
+
+        return response()->json([
+            'message' => __('नोंद बदलली.'),
+            'data' => $this->present($tx) + [
+                'current_jars' => $balance['current_jars'],
+                'pending_amount' => $balance['pending'],
+            ],
+        ]);
     }
 
     public function destroy(JarTransaction $jarTransaction)

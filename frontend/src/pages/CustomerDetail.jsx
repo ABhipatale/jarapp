@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import api, { errorMessage } from '../api/client';
+import EditEntryModal from '../components/EditEntryModal';
 import LedgerTable from '../components/LedgerTable';
 import { Badge, Empty, ErrorBox, Loader, PageHeader } from '../components/ui';
 import { useSettings } from '../context/SettingsContext';
@@ -15,6 +17,7 @@ export default function CustomerDetail() {
   const { settings } = useSettings();
   const { toast, confirm } = useUi();
   const { data, loading, error, reload } = useApi(`/customers/${id}/ledger`);
+  const [editing, setEditing] = useState(null);
 
   if (error) return <ErrorBox message={error} onRetry={reload} />;
   if (loading || !data) return <Loader />;
@@ -99,12 +102,13 @@ export default function CustomerDetail() {
             {t('cust.fullLedger')} ›
           </Link>
         </div>
-        {rows.length === 0 ? <Empty>{t('cust.noEntries')}</Empty> : <LedgerTable rows={rows} />}
+        {rows.length === 0 ? <Empty>{t('cust.noEntries')}</Empty> : <LedgerTable rows={rows} onEdit={setEditing} />}
       </section>
 
       <button className="w-full py-3 text-sm font-semibold text-red-600" onClick={remove}>
         🗑 {t('cust.delete')}
       </button>
+      {editing && <EditEntryModal kind={editing.kind} id={editing.id} onClose={() => setEditing(null)} onSaved={reload} />}
     </div>
   );
 }

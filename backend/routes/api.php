@@ -29,8 +29,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/jars/adjust', [JarController::class, 'adjust']);
     Route::put('/jars/{jar}', [JarController::class, 'update']);
 
-    Route::apiResource('jar-transactions', JarTransactionController::class)->only(['index', 'store', 'destroy']);
-    Route::apiResource('payments', PaymentController::class)->only(['index', 'store', 'destroy']);
+    Route::apiResource('jar-transactions', JarTransactionController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
+    Route::apiResource('payments', PaymentController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
     Route::apiResource('expenses', ExpenseController::class)->only(['index', 'store', 'destroy']);
 
     Route::prefix('reports')->controller(ReportController::class)->group(function () {

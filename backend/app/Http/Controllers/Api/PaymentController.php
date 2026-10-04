@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PaymentRequest;
+use App\Http\Requests\UpdatePaymentRequest;
 use App\Models\Payment;
 use App\Services\PaymentService;
 use Illuminate\Http\Request;
@@ -49,6 +50,19 @@ class PaymentController extends Controller
             'duplicate' => ! $created,
             'data' => $this->present($payment),
         ], $created ? 201 : 200);
+    }
+
+    public function show(Payment $payment)
+    {
+        return response()->json(['data' => $this->present($payment->load('customer:id,name,mobile'))]);
+    }
+
+    public function update(UpdatePaymentRequest $request, Payment $payment)
+    {
+        $payment = $this->service->update($payment, $request->validated());
+        $payment->load('customer:id,name,mobile');
+
+        return response()->json(['message' => __('पेमेंट बदलले.'), 'data' => $this->present($payment)]);
     }
 
     public function destroy(Payment $payment)

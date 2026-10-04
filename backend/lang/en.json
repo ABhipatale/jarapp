@@ -73,5 +73,8 @@
     "उपलब्ध": "available",
     "खराब": "damaged",
     "हरवलेले": "lost",
-    "परत": "returned"
+    "परत": "returned",
+    "नोंद बदलली.": "Entry updated.",
+    "पेमेंट बदलले.": "Payment updated.",
+    "ग्राहकाने यातील काही जार आधीच परत केले आहेत. दिलेले जार :min पेक्षा कमी करता येणार नाहीत.": "The customer has already returned some of these jars. Jars given cannot be less than :min."
 }

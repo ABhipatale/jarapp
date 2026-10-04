@@ -3,7 +3,7 @@ import { fmtDate, money } from '../lib/format';
 import { Badge } from './ui';
 
 /** Date | Given | Returned | Net Jar | Amount | Paid | Udhari | Balance */
-export default function LedgerTable({ rows }) {
+export default function LedgerTable({ rows, onEdit }) {
   return (
     <div className="table-wrap">
       <table className="tbl">
@@ -24,6 +24,16 @@ export default function LedgerTable({ rows }) {
           {rows.map((r) => (
             <tr key={r.id}>
               <td>
+                {onEdit && (
+                  <button
+                    type="button"
+                    className="no-print mr-1.5 rounded-md px-1 text-base leading-none hover:bg-slate-100"
+                    onClick={() => onEdit(r.payment_id ? { kind: 'payment', id: r.payment_id } : { kind: 'jar', id: r.jar_transaction_id })}
+                    aria-label={t('edit.button')}
+                  >
+                    ✏️
+                  </button>
+                )}
                 {fmtDate(r.entry_date)}
                 {r.entry_type === 'payment' && (
                   <span className="ml-1.5">

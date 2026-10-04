@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api, { errorMessage } from '../api/client';
+import EditEntryModal from '../components/EditEntryModal';
 import RangeFilter, { initialRange } from '../components/RangeFilter';
 import { Badge, Empty, ErrorBox, Fab, Loader, PageHeader } from '../components/ui';
 import { useUi } from '../context/UiContext';
@@ -16,6 +17,7 @@ export default function Transactions() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const q = useDebounced(search);
+  const [editId, setEditId] = useState(null);
   const { data, loading, error, reload } = useApi('/jar-transactions', { from: range.from, to: range.to, type: type || undefined, search: q, page });
   const list = data?.data || [];
 
@@ -73,7 +75,10 @@ export default function Transactions() {
               </div>
             )}
             {tx.notes && <p className="mt-1 text-sm text-slate-500">📝 {tx.notes}</p>}
-            <div className="mt-2 text-right">
+            <div className="mt-2 flex justify-end gap-4">
+              <button className="text-sm font-semibold text-brand-700" onClick={() => setEditId(tx.id)}>
+                {t('edit.button')}
+              </button>
               <button className="text-sm font-semibold text-red-600" onClick={() => remove(tx)}>
                 {t('tx.deleteBtn')}
               </button>
@@ -91,6 +96,7 @@ export default function Transactions() {
       )}
 
       <Fab to="/entry" label={t('tx.newEntry')} />
+      {editId && <EditEntryModal kind="jar" id={editId} onClose={() => setEditId(null)} onSaved={reload} />}
     </div>
   );
 }

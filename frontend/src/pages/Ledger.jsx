@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ExportBar from '../components/ExportBar';
+import EditEntryModal from '../components/EditEntryModal';
 import LedgerTable from '../components/LedgerTable';
 import { Empty, ErrorBox, Loader, PageHeader, PendingText, PrintHeader } from '../components/ui';
 import { useSettings } from '../context/SettingsContext';
@@ -16,6 +17,7 @@ export default function Ledger() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const { data, loading, error, reload } = useApi(`/customers/${id}/ledger`, { from: from || undefined, to: to || undefined });
+  const [editing, setEditing] = useState(null);
 
   if (error) return <ErrorBox message={error} onRetry={reload} />;
   if (!data) return <Loader />;
@@ -80,8 +82,9 @@ export default function Ledger() {
             {t('ledger.openingBalance')} <b>{money(data.opening.balance)}</b> · {t('ledger.openingJars')} <b>{data.opening.jar_balance}</b>
           </p>
         )}
-        {loading ? <Loader /> : rows.length === 0 ? <Empty>{t('ledger.noEntries')}</Empty> : <LedgerTable rows={rows} />}
+        {loading ? <Loader /> : rows.length === 0 ? <Empty>{t('ledger.noEntries')}</Empty> : <LedgerTable rows={rows} onEdit={setEditing} />}
       </div>
+      {editing && <EditEntryModal kind={editing.kind} id={editing.id} onClose={() => setEditing(null)} onSaved={reload} />}
     </div>
   );
 }

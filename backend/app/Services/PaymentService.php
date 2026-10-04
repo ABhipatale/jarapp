@@ -64,6 +64,41 @@ class PaymentService
         }
     }
 
+    /** Correct a saved payment (amount, date, mode, advance, notes). Customer stays fixed. */
+    public function update(Payment $payment, array $data): Payment
+    {
+        return DB::transaction(function () use ($payment, $data) {
+            Customer::withTrashed()->whereKey($payment->customer_id)->lockForUpdate()->first();
+            $payment->refresh();
+
+            // What the customer would owe if this payment didn't exist.
+            $pendingWithout = round($this->balances->forCustomer($payment->customer_id)['pending'] + $payment->amount, 2);
+            $amount = round((float) $data['amount'], 2);
+            $isAdvance = (bool) ($data['is_advance'] ?? false);
+
+            if ($amount > max($pendingWithout, 0) && ! $isAdvance) {
+                $shown = number_format(max($pendingWithout, 0), 2);
+                throw ValidationException::withMessages([
+                    'amount' => __('पेमेंट बाकी रकमेपेक्षा (₹:pending) जास्त आहे. जास्तीची रक्कम घेण्यासाठी "आगाऊ पेमेंट" निवडा.', ['pending' => $shown]),
+                ]);
+            }
+
+            // previous_pending stays the receipt's original "before" figure.
+            $payment->update([
+                'payment_date' => $data['payment_date'],
+                'amount' => $amount,
+                'payment_mode' => $data['payment_mode'],
+                'is_advance' => $isAdvance,
+                'remaining_pending' => round($payment->previous_pending - $amount, 2),
+                'notes' => $data['notes'] ?? null,
+            ]);
+
+            $this->ledger->rebuild($payment->customer_id);
+
+            return $payment->fresh();
+        });
+    }
+
     public function delete(Payment $payment): void
     {
         DB::transaction(function () use ($payment) {

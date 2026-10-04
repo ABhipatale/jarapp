@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import api, { errorMessage } from '../api/client';
+import EditEntryModal from '../components/EditEntryModal';
 import RangeFilter, { initialRange } from '../components/RangeFilter';
 import { Badge, Empty, ErrorBox, Fab, Loader, PageHeader } from '../components/ui';
 import { useSettings } from '../context/SettingsContext';
@@ -16,6 +17,7 @@ export default function Payments() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const q = useDebounced(search);
+  const [editId, setEditId] = useState(null);
   const { data, loading, error, reload } = useApi('/payments', { from: range.from, to: range.to, search: q, page });
   const list = data?.data || [];
   const total = list.reduce((s, p) => s + p.amount, 0);
@@ -67,6 +69,9 @@ export default function Payments() {
               <button className="btn-wa btn-sm flex-1" onClick={() => openWhatsApp(p.customer_mobile, messages.payment(settings, p))}>
                 {t('payments.receipt')}
               </button>
+              <button className="btn-light btn-sm" onClick={() => setEditId(p.id)} aria-label={t('edit.button')}>
+                ✏️
+              </button>
               <button className="btn-light btn-sm text-red-600" onClick={() => remove(p)} aria-label={t('entry.delete')}>
                 🗑
               </button>
@@ -84,6 +89,7 @@ export default function Payments() {
       )}
 
       <Fab to="/payments/new" label={t('payments.receive')} />
+      {editId && <EditEntryModal kind="payment" id={editId} onClose={() => setEditId(null)} onSaved={reload} />}
     </div>
   );
 }
