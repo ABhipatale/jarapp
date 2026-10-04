@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ExpenseController;
@@ -46,6 +47,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pending', 'pending');
         Route::get('/jar-status', 'jarStatus');
     });
+
+    Route::get('/bookings', [BookingController::class, 'index']);
+    Route::get('/bookings/today', [BookingController::class, 'today']);
+    Route::post('/bookings', [BookingController::class, 'store']);
+    Route::put('/bookings/{booking}', [BookingController::class, 'update']);
+    Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel']);
 
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/notifications/count', [NotificationController::class, 'count']);

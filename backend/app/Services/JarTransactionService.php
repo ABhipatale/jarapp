@@ -16,6 +16,7 @@ class JarTransactionService
         private LedgerService $ledger,
         private JarService $jars,
         private ReminderService $reminders,
+        private BookingService $bookings,
     ) {}
 
     /**
@@ -98,6 +99,9 @@ class JarTransactionService
 
                 $tx = JarTransaction::create($row);
                 $this->reminders->forGive($tx, $data['reminder_days'] ?? null);
+                if ($tx->transaction_type === JarTransaction::GIVEN && ! empty($data['booking_id'])) {
+                    $this->bookings->markDelivered((int) $data['booking_id'], $tx);
+                }
                 $this->ledger->rebuild($tx->customer_id);
                 $this->reminders->syncCustomer($tx->customer_id);
 
@@ -230,6 +234,7 @@ class JarTransactionService
 
             $tx->delete();
             $this->reminders->removeFor($tx);
+            $this->bookings->reopenFor($tx);
             $this->ledger->rebuild($tx->customer_id);
             $this->reminders->syncCustomer($tx->customer_id);
         });

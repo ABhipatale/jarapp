@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\PushSubscription;
 use App\Models\Reminder;
+use App\Services\BookingService;
 use App\Services\PushService;
 use App\Services\ReminderService;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
-    public function __construct(private ReminderService $reminders) {}
+    public function __construct(private ReminderService $reminders, private BookingService $bookings) {}
 
     public function index()
     {
@@ -22,8 +23,14 @@ class NotificationController extends Controller
     public function count()
     {
         $this->reminders->runDue(lazy: true);
+        $this->bookings->runNotifications();
+        $today = $this->bookings->summaryFor();
 
-        return response()->json(['unread' => $this->reminders->unreadCount()]);
+        return response()->json([
+            'unread' => $this->reminders->unreadCount() + $today['count'],
+            'reminders' => $this->reminders->unreadCount(),
+            'bookings_today' => $today,
+        ]);
     }
 
     public function readAll()
@@ -84,11 +91,14 @@ class NotificationController extends Controller
     }
 
     /**
-     * Daily job (Vercel Cron, ~9 AM IST). Public on purpose: it only ever sends reminders
+     * Scheduled job (Vercel Cron: ~7 AM, ~9 AM and ~8 PM IST). Public on purpose: it only ever sends reminders
      * that are already due, each once, so calling it again does nothing harmful.
      */
     public function cron()
     {
-        return response()->json($this->reminders->runDue());
+        // Follow-up reminders go out from 9 AM; the 7 AM run only does the bookings.
+        $reminders = now()->hour >= 9 ? $this->reminders->runDue() : null;
+
+        return response()->json(['reminders' => $reminders, 'bookings' => $this->bookings->runNotifications()]);
     }
 }

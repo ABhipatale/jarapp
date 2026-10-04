@@ -32,7 +32,9 @@ export default function DailyEntry() {
   const [customerId, setCustomerId] = useState(params.get('customer') || '');
   const [customer, setCustomer] = useState(null);
   const [type, setType] = useState(params.get('type') === 'returned' ? 'returned' : 'given');
-  const [qty, setQty] = useState('1');
+  const [qty, setQty] = useState(params.get('qty') || '1');
+  // Delivery of an advance booking (closes the booking when saved).
+  const [bookingId, setBookingId] = useState(params.get('booking') || null);
   const [rate, setRate] = useState(settings.default_rate || '');
   const [payType, setPayType] = useState('cash');
   const [paidInput, setPaidInput] = useState('');
@@ -61,6 +63,8 @@ export default function DailyEntry() {
     const ty = params.get('type');
     if (ty === 'given' || ty === 'returned') setType(ty);
     if (params.get('customer')) setCustomerId(params.get('customer'));
+    if (params.get('qty')) setQty(params.get('qty'));
+    setBookingId(params.get('booking') || null);
   }, [params]);
 
   useEffect(() => {
@@ -104,7 +108,7 @@ export default function DailyEntry() {
       transaction_type: type,
       jar_quantity: q,
       notes: notes || null,
-      ...(type === 'given' && { rate: num(rate), payment_type: payType, paid_amount: paid, advance_amount: num(advance), return_quantity: r, reminder_days: reminderDays }),
+      ...(type === 'given' && { rate: num(rate), payment_type: payType, paid_amount: paid, advance_amount: num(advance), return_quantity: r, reminder_days: reminderDays, booking_id: bookingId ? Number(bookingId) : undefined }),
     };
     try {
       const label = r > 0 ? t('entry.outboxGiveReturn', { q, r, name: customer?.name }) : t(type === 'given' ? 'entry.outboxGive' : 'entry.outboxReturn', { q, name: customer?.name });
@@ -114,7 +118,8 @@ export default function DailyEntry() {
         setResult({ queued: true, customer_name: customer?.name, transaction_type: type, jar_quantity: q, returned_quantity: r, reminder_days: type === 'given' ? reminderDays : 0, transaction_date: date });
       } else {
         toast(res.data.message || t('entry.savedOk'));
-        setResult({ ...res.data.data, customer_name: customer?.name, customer_mobile: customer?.mobile, reminder_days: type === 'given' ? reminderDays : 0 });
+        setResult({ ...res.data.data, customer_name: customer?.name, customer_mobile: customer?.mobile, reminder_days: type === 'given' ? reminderDays : 0, booking_done: type === 'given' && Boolean(bookingId) });
+        setBookingId(null);
         setCustomer((c) => c && { ...c, current_jars: res.data.data.current_jars, pending_amount: res.data.data.pending_amount });
         loadStock();
       }
@@ -147,6 +152,10 @@ export default function DailyEntry() {
   return (
     <form onSubmit={save} className="space-y-4">
       <PageHeader title={t('entry.title')} />
+
+      {bookingId && type === 'given' && (
+        <div className="rounded-2xl bg-violet-50 px-4 py-2.5 text-sm font-semibold text-violet-900 ring-1 ring-violet-200">{t('book.deliveringBanner')}</div>
+      )}
 
       <Segmented
         value={type}
@@ -316,6 +325,7 @@ function SavedCard({ result, settings, onNew }) {
           <Row label={t('entry.customer')} value={result.customer_name} />
           <Row label={isGive ? t('entry.given') : t('entry.returned')} value={t('entry.jarsN', { n: result.jar_quantity })} />
           {isGive && result.returned_quantity > 0 && <Row label={t('entry.takenBack')} value={t('entry.jarsN', { n: result.returned_quantity })} />}
+          {result.booking_done && <Row label={t('book.title')} value={t('book.deliveredRow')} />}
           {isGive && result.reminder_days > 0 && <Row label={t('entry.reminderRow')} value={`🔔 ${fmtDate(addDays(result.transaction_date, result.reminder_days))}`} />}
           {!result.queued && (
             <>

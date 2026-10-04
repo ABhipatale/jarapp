@@ -19,6 +19,7 @@ export default function Dashboard() {
   const { settings } = useSettings();
   const [range, setRange] = useState(initialRange('today'));
   const { data, loading, error, reload } = useApi('/dashboard', { from: range.from, to: range.to });
+  const { data: todayBookings } = useApi('/bookings/today');
 
   const isToday = range.from === today() && range.to === today();
   const label = isToday ? t('dash.today') : range.preset === 'yesterday' ? t('dash.yesterday') : '';
@@ -56,6 +57,13 @@ export default function Dashboard() {
         )}
       </div>
 
+      {todayBookings?.count > 0 && (
+        <Link to="/bookings" className="flex items-center justify-between rounded-2xl bg-amber-100 px-4 py-3 font-semibold text-amber-900 ring-1 ring-amber-300">
+          <span>🚚 {t('book.todayBanner', { n: todayBookings.count, jars: todayBookings.jars })}</span>
+          <span>›</span>
+        </Link>
+      )}
+
       {/* Quick actions — one tap each */}
       <div className="grid grid-cols-2 gap-3">
         {QUICK.map((q) => (
@@ -64,6 +72,9 @@ export default function Dashboard() {
             {q.label}
           </Link>
         ))}
+        <Link to="/bookings" className="col-span-2 flex items-center justify-center gap-3 rounded-2xl bg-violet-600 px-4 py-3.5 text-base font-bold text-white shadow-sm active:scale-[.98]">
+          <span className="text-2xl leading-none">📅</span> {t('book.quick')}
+        </Link>
         <button onClick={sendSummary} disabled={!data} className="btn-wa col-span-2 rounded-2xl py-4 text-base">
           📱 {t('dash.sendSummary')}
         </button>

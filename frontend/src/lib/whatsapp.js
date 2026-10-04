@@ -214,6 +214,28 @@ export const messages = {
       remaining_pending: amt(p.remaining_pending),
     });
   },
+  booking(settings, b) {
+    return fillTemplate(
+      `🙏 *नमस्कार {customer_name}*,
+
+📅 आपली बुकिंग नोंदवली आहे.
+${LINE}
+🗓️ डिलिव्हरी दिनांक : *{date}*
+💧 जार : *{qty} पाण्याचे जार*
+{notes_line}${LINE}
+
+ठरलेल्या दिवशी आपल्याला जार पोहोचवले जातील.
+
+{footer}`,
+      {
+        ...shopValues(settings),
+        customer_name: b.customer_name,
+        date: fmtDate(b.delivery_date),
+        qty: b.jar_quantity,
+        notes_line: b.notes ? `📝 ${b.notes}\n` : '',
+      }
+    );
+  },
   reminder(settings, c) {
     return fillTemplate(tpl(settings, 'wa_reminder'), {
       ...shopValues(settings),

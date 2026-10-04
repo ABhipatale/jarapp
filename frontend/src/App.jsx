@@ -16,6 +16,7 @@ import Transactions from './pages/Transactions';
 import Expenses from './pages/Expenses';
 import Settings from './pages/Settings';
 import Notifications from './pages/Notifications';
+import Bookings from './pages/Bookings';
 import Reports from './pages/reports/Reports';
 import PeriodReport from './pages/reports/PeriodReport';
 import CashReport from './pages/reports/CashReport';
@@ -52,6 +53,7 @@ export default function App() {
           <Route path="expenses" element={<Expenses />} />
           <Route path="settings" element={<Settings />} />
           <Route path="notifications" element={<Notifications />} />
+          <Route path="bookings" element={<Bookings />} />
           <Route path="reports" element={<Reports />} />
           <Route path="reports/daily" element={<PeriodReport kind="daily" />} />
           <Route path="reports/weekly" element={<PeriodReport kind="weekly" />} />

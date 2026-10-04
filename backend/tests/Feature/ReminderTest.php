@@ -66,11 +66,11 @@ class ReminderTest extends TestCase
         $this->assertNotNull(Reminder::first()->pushed_at);
 
         // Daily job again the same day: nothing new to send.
-        $this->getJson('/api/cron/reminders')->assertJsonPath('notified', 0);
+        $this->getJson('/api/cron/reminders')->assertJsonPath('reminders.notified', 0);
 
         // Still not clear the next day: reminded again, and it keeps counting on the bell.
         Carbon::setTestNow('2026-10-06 09:00:00');
-        $this->getJson('/api/cron/reminders')->assertJsonPath('notified', 1);
+        $this->getJson('/api/cron/reminders')->assertJsonPath('reminders.notified', 1);
         $this->postJson('/api/notifications/read')->assertOk();
         $this->getJson('/api/notifications/count')->assertJsonPath('unread', 1);
     }
@@ -93,7 +93,7 @@ class ReminderTest extends TestCase
 
         // Nothing is pushed for it any more.
         Carbon::setTestNow('2026-10-06 09:00:00');
-        $this->getJson('/api/cron/reminders')->assertJsonPath('notified', 0);
+        $this->getJson('/api/cron/reminders')->assertJsonPath('reminders.notified', 0);
     }
 
     public function test_upcoming_reminder_closes_when_customer_clears_early(): void
@@ -116,7 +116,7 @@ class ReminderTest extends TestCase
         $this->assertTrue(Reminder::first()->auto_done);
 
         Carbon::setTestNow('2026-10-11 09:00:00');
-        $this->getJson('/api/cron/reminders')->assertOk()->assertJsonPath('notified', 0);
+        $this->getJson('/api/cron/reminders')->assertOk()->assertJsonPath('reminders.notified', 0);
         $this->getJson('/api/notifications/count')->assertJsonPath('unread', 0);
     }
 

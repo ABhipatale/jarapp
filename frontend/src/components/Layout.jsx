@@ -20,6 +20,7 @@ const NAV = [
 ];
 
 const MENU = [
+  { to: '/bookings', label: t('book.title'), icon: '📅' },
   { to: '/notifications', label: t('notif.title'), icon: '🔔' },
   { to: '/transactions', label: t('nav.allJarEntries'), icon: '📋' },
   { to: '/expenses', label: t('nav.expenses'), icon: '🧾' },

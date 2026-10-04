@@ -97,6 +97,11 @@ export default function Notifications() {
         )}
       </div>
 
+      <Link to="/bookings" className="card flex items-center justify-between !py-3">
+        <span className="font-semibold">📅 {t('book.seeAll')}</span>
+        <span className="text-brand-700">›</span>
+      </Link>
+
       {error && <ErrorBox message={error} onRetry={reload} />}
       {loading && !data && <Loader />}
 

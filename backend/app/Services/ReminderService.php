@@ -116,6 +116,10 @@ class ReminderService
      */
     public function runDue(bool $lazy = false): array
     {
+        // Follow-up reminders go out from 9 AM (the early run is for bookings).
+        if (now()->hour < 9) {
+            return ['closed' => 0, 'notified' => 0, 'devices' => 0];
+        }
         if ($lazy && ! Cache::add('reminders:ran:'.now()->toDateString(), 1, now()->endOfDay())) {
             return ['closed' => 0, 'notified' => 0, 'devices' => 0];
         }

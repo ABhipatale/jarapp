@@ -83,5 +83,13 @@
     "आठवण पूर्ण केली.": "Reminder marked done.",
     "आठवण हटवली.": "Reminder deleted.",
     "या फोनवर सूचना चालू झाल्या.": "Notifications turned on for this phone.",
-    "या फोनवर सूचना बंद केल्या.": "Notifications turned off for this phone."
+    "या फोनवर सूचना बंद केल्या.": "Notifications turned off for this phone.",
+    "🚚 आज :n डिलिव्हरी · :jars जार": "🚚 Today :n deliveries · :jars jars",
+    "📅 उद्या :n बुकिंग · एकूण :jars जार": "📅 Tomorrow :n bookings · :jars jars in total",
+    "बुकिंग नोंदवली.": "Booking saved.",
+    "बुकिंग बदलली.": "Booking updated.",
+    "बुकिंग रद्द केली.": "Booking cancelled.",
+    "कृपया डिलिव्हरीची तारीख निवडा.": "Please select the delivery date.",
+    "बुकिंगची तारीख आज किंवा पुढची असावी.": "Booking date must be today or later.",
+    "ही बुकिंग आधीच पूर्ण किंवा रद्द झाली आहे.": "This booking is already delivered or cancelled."
 }
