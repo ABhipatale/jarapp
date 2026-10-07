@@ -21,7 +21,7 @@ import ExportBar from '../../components/ExportBar';
 import { SortTh, useSort } from '../../components/table';
 import { Empty, ErrorBox, Loader, PageHeader, PendingText, PrintHeader, SkeletonCards, StatCard } from '../../components/ui';
 import { useSettings } from '../../context/SettingsContext';
-import { lang, t } from '../../i18n';
+import { lang, t, tx } from '../../i18n';
 import { exportExcel } from '../../lib/export';
 import { addDays, fmtDate, money, today } from '../../lib/format';
 import { useApi, useDebounced } from '../../lib/useApi';
@@ -114,7 +114,7 @@ export default function PeriodReport({ kind }) {
                   className="btn-wa btn-sm shrink-0"
                   onClick={() => openWhatsApp(null, messages.summary(settings, { date: data.from, given: s.given, returned: s.returned, cash: s.cash, udhari: s.udhari, payments: s.payments, pending: s.pending }))}
                 >
-                  <MessageCircle size={16} /> {t('rep.period.waSummary')}
+                  <MessageCircle size={16} /> {tx('rep.period.waSummary')}
                 </button>
               ) : null
             }

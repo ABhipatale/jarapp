@@ -6,7 +6,7 @@ import { Field, Loader, PageHeader, Segmented } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
 import { useUi } from '../context/UiContext';
-import { LANGS, lang, setLang, t } from '../i18n';
+import { LANGS, lang, setLang, t, tx } from '../i18n';
 import { DEFAULT_TEMPLATES, getWaApp, setWaApp } from '../lib/whatsapp';
 
 const TEMPLATES = [
@@ -202,7 +202,7 @@ export default function Settings() {
       </Section>
 
       <button className="btn-light w-full text-red-600" onClick={logout}>
-        <LogOut size={18} /> {t('set.logout')}
+        <LogOut size={18} /> {tx('set.logout')}
       </button>
     </div>
   );

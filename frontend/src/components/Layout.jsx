@@ -10,7 +10,7 @@ import { useSettings } from '../context/SettingsContext';
 import { useUi } from '../context/UiContext';
 import api from '../api/client';
 import { discard, outboxItems, subscribe, syncOutbox } from '../lib/outbox';
-import { t } from '../i18n';
+import { t, tx } from '../i18n';
 import { businessName, businessPlace } from '../lib/format';
 import { getTheme, setTheme } from '../lib/theme';
 import { useDebounced } from '../lib/useApi';
@@ -230,7 +230,7 @@ export default function Layout() {
               className={`flex w-full items-center justify-center gap-2 px-4 py-1.5 text-sm font-medium text-white ${failed.length ? 'bg-red-600' : 'bg-amber-500'}`}
             >
               <CloudOff size={15} />
-              {!online ? t('layout.offline') : ''}
+              {!online ? tx('layout.offline') : ''}
               {queue.length > 0 && `${t(queue.length === 1 ? 'layout.waitingOne' : 'layout.waiting', { n: queue.length })}${failed.length ? t('layout.needAttention', { n: failed.length }) : ''} ›`}
             </button>
           )}

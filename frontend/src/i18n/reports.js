@@ -107,6 +107,8 @@ export default {
     'rep.pending.never': 'कधीही नाही',
     'rep.pending.sendReminder': '🔔 उधारी आठवण पाठवा',
     'rep.pending.receive': '💰 पेमेंट घ्या',
+    'rep.pending.remindBtn': 'आठवण',
+    'rep.pending.receiveBtn': 'पेमेंट घ्या',
 
     // Jar status report
     'rep.jarStatus.title': 'जार स्थिती',
@@ -256,6 +258,8 @@ export default {
     'rep.pending.never': 'never',
     'rep.pending.sendReminder': '🔔 Send Udhari Reminder',
     'rep.pending.receive': '💰 Receive',
+    'rep.pending.remindBtn': 'Remind',
+    'rep.pending.receiveBtn': 'Receive',
 
     // Jar status report
     'rep.jarStatus.title': 'Jar Status',

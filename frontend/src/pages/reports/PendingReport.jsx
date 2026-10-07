@@ -70,15 +70,15 @@ export default function PendingReport() {
                   </Link>
                   <div className="shrink-0 text-lg font-semibold tabular-nums text-red-600">{money(r.pending_amount)}</div>
                 </div>
-                <div className="no-print flex gap-2 pl-12">
-                  <button className="btn-wa btn-sm flex-1" onClick={() => openWhatsApp(r.mobile, messages.reminder(settings, r))}>
-                    <MessageCircle size={16} /> {t('rep.pending.sendReminder')}
+                <div className="no-print flex items-center gap-2 sm:pl-12">
+                  <button className="btn-wa btn-sm h-9 min-w-0 flex-1 whitespace-nowrap" onClick={() => openWhatsApp(r.mobile, messages.reminder(settings, r))}>
+                    <MessageCircle size={16} className="shrink-0" /> <span className="truncate">{t('rep.pending.remindBtn')}</span>
                   </button>
-                  <Link to={`/payments/new?customer=${r.customer_id}`} className="btn-light btn-sm flex-1">
-                    <Wallet size={16} /> {t('rep.pending.receive')}
+                  <Link to={`/payments/new?customer=${r.customer_id}`} className="btn-light btn-sm h-9 min-w-0 flex-1 whitespace-nowrap">
+                    <Wallet size={16} className="shrink-0" /> <span className="truncate">{t('rep.pending.receiveBtn')}</span>
                   </Link>
                   {r.mobile && (
-                    <a href={`tel:${r.mobile}`} className="btn-light btn-sm !px-2.5" aria-label={t('rep.call')}>
+                    <a href={`tel:${r.mobile}`} className="btn-light btn-sm h-9 w-9 shrink-0 !px-0" aria-label={t('rep.call')}>
                       <Phone size={16} />
                     </a>
                   )}

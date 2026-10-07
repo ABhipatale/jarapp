@@ -44,3 +44,8 @@ export function t(key, vars) {
 }
 
 if (typeof document !== 'undefined') document.documentElement.lang = lang;
+
+/** Same as t(), without a leading emoji — for labels that already show a Lucide icon. */
+export function tx(key, vars) {
+  return t(key, vars).replace(/^\s*\p{Extended_Pictographic}️?\s*/u, '');
+}
