@@ -146,7 +146,7 @@ export default function Layout() {
       {/* ── Desktop sidebar ─────────────────────────────────────────── */}
       <aside className="no-print fixed inset-y-0 left-0 z-40 hidden w-[var(--sb)] flex-col border-r border-line bg-surface transition-[width] duration-200 lg:flex">
         <div className={`flex h-16 items-center gap-2.5 border-b border-line ${collapsed ? 'justify-center px-2' : 'px-4'}`}>
-          <img src={logo} alt="" className="h-9 w-8 shrink-0 rounded-md object-contain" />
+          <img src={logo} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover shadow-soft ring-1 ring-line" />
           {!collapsed && (
             <div className="min-w-0 leading-tight">
               <div className="truncate text-[15px] font-semibold text-ink">{businessName(settings)}</div>
@@ -194,7 +194,7 @@ export default function Layout() {
         <header className="no-print pt-safe sticky top-0 z-30 border-b border-line bg-surface/85 backdrop-blur-md">
           <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4 lg:h-16 lg:px-8">
             <Link to="/" className="flex min-w-0 flex-1 items-center gap-2.5 lg:hidden">
-              <img src={logo} alt="" className="h-9 w-8 shrink-0 rounded-md object-contain" />
+              <img src={logo} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover shadow-soft ring-1 ring-line" />
               <div className="min-w-0 leading-tight">
                 <div className="truncate text-[15px] font-semibold text-ink">{businessName(settings)}</div>
                 <div className="truncate text-xs text-muted">{businessPlace(settings)} · {t('common.jarMgmt')}</div>

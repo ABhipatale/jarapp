@@ -9,7 +9,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.png', 'icons/apple-touch-icon.png'],
+      includeAssets: ['favicon.png', 'favicon.ico', 'icons/apple-touch-icon.png'],
       manifest: {
         name: 'साई वॉटर सप्लायर्स – जार व्यवस्थापन',
         short_name: 'साई वॉटर',

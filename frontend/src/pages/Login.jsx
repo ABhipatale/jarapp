@@ -63,7 +63,7 @@ export default function Login() {
       {/* Brand panel (desktop) */}
       <aside className="relative hidden flex-col justify-between overflow-hidden bg-brand-700 p-10 text-white lg:flex xl:p-14">
         <div className="flex items-center gap-3">
-          <img src={logo} alt="" className="h-11 w-11 rounded-xl bg-white object-contain p-1" />
+          <img src={logo} alt="" className="h-12 w-12 rounded-full object-cover shadow-pop ring-2 ring-white/40" />
           <div>
             <div className="text-lg font-semibold leading-tight">{t('common.businessName')}</div>
             <div className="text-sm text-white/70">{t('common.businessPlace')}</div>
